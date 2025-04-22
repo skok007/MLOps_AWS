@@ -12,6 +12,22 @@ jobs:
     # Run on the latest Ubuntu runner
     runs-on: ubuntu-latest
     
+    # Add PostgreSQL service
+    services:
+      postgres:
+        image: ankane/pgvector:latest  # Use pgvector image instead of standard postgres
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
     # Define environment variables needed for the application
     # These variables are used by the application's Settings class
     env:
@@ -23,8 +39,9 @@ jobs:
       # Database connection settings
       POSTGRES_HOST: localhost
       POSTGRES_DB: test_db
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}      # Sensitive value stored in GitHub Secrets
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}  # Sensitive value stored in GitHub Secrets
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_PORT: 5432
       
       # API endpoints and paths
       ARXIV_API_URL: https://export.arxiv.org/api/query
@@ -39,6 +56,7 @@ jobs:
       OPIK_API_KEY: ${{ secrets.OPIK_API_KEY }}
       OPIK_WORKSPACE: ${{ secrets.OPIK_WORKSPACE }}
       OPIK_PROJECT_NAME: ${{ secrets.OPIK_PROJECT_NAME }}
+      OPIK_ENVIRONMENT: test  # Add this to distinguish test environment
       
       # OpenAI settings
       OPENAI_MODEL: gpt-3.5-turbo
@@ -90,13 +108,19 @@ jobs:
         working-directory: ./rag-app
         run: poetry install --no-interaction --no-root  # Install dependencies without user interaction
           
-      # Step 7: Run the test suite
+      # Step 7: Download SentenceTransformer model
+      - name: Download SentenceTransformer model
+        working-directory: ./rag-app
+        run: |
+          poetry run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+          
+      # Step 8: Run the test suite
       - name: Run tests
         working-directory: ./rag-app
         run: |
           poetry run pytest tests/ -v --junitxml=test-results.xml  # Run tests and generate XML report
           
-      # Step 8: Upload test results as artifacts
+      # Step 9: Upload test results as artifacts
       # This makes test results available even if tests fail
       - name: Upload test results
         uses: actions/upload-artifact@v4

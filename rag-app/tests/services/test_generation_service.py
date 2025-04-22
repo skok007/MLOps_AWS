@@ -36,11 +36,12 @@ async def test_generate_response_basic(
         "eval_duration": 0.1,
     }
 
-    # Call the function under test
-    response = generate_response(mock_query, mock_chunks, **mock_config)
+    # Call the function under test. use await to make the function asynchronous
+    response = await generate_response(mock_query, mock_chunks, **mock_config)
     print(response)
     # Assertions
-    assert isinstance(response, Union[Dict, None]), "Response should be a Dict or None."
+    assert isinstance(response, Dict), "Response should be a Dict."
+    assert "response" in response, "Response should contain a 'response' key."
     assert (
         "perovskites" in response["response"]
     ), "Response should contain relevant query content."
@@ -73,11 +74,13 @@ async def test_generate_response_empty_chunks(
     )
 
     # Call the function with an empty list of chunks
-    response = generate_response(mock_query, [], **mock_config)
+    response = await generate_response(mock_query, [], **mock_config)
 
     # Assertions
+    assert isinstance(response, Dict), "Response should be a Dict."
+    assert "response" in response, "Response should contain a 'response' key."
     assert (
-        response == "No relevant information found for perovskites in solar cells."
+        response["response"] == "No relevant information found for perovskites in solar cells."
     ), "Should return a specific message for empty chunks."
 
 
@@ -103,13 +106,14 @@ async def test_generate_response_high_temperature(
     )
 
     # Call the function with a high temperature setting
-    response = generate_response(
+    response = await generate_response(
         mock_query, mock_chunks, max_tokens=150, temperature=1.5
     )
 
     # Assertions
-    assert isinstance(response, str), "Response should still be a string."
-    assert len(response.split()) <= 150, "Response should respect the max_tokens limit."
+    assert isinstance(response, Dict), "Response should be a Dict."
+    assert "response" in response, "Response should contain a 'response' key."
+    assert len(response["response"].split()) <= 150, "Response should respect the max_tokens limit."
 
 
 @pytest.mark.asyncio
@@ -136,13 +140,15 @@ async def test_generate_response_long_query(mock_chunks, mock_generate_response)
     )
 
     # Call the generate_response function with the long query
-    response = generate_response(
+    response = await generate_response(
         long_query, mock_chunks, max_tokens=150, temperature=0.7
     )
 
     # Assertions
-    assert "Perovskites" in response, "Response should handle long query without error."
-    assert len(response.split()) <= 150, "Response should not exceed max_tokens."
+    assert isinstance(response, Dict), "Response should be a Dict."
+    assert "response" in response, "Response should contain a 'response' key."
+    assert "Perovskites" in response["response"], "Response should handle long query without error."
+    assert len(response["response"].split()) <= 150, "Response should not exceed max_tokens."
 
 
 @pytest.mark.asyncio
@@ -170,11 +176,13 @@ async def test_generate_response_with_multiple_chunks(
     )
 
     # Call the function with multiple chunks
-    response = generate_response(
+    response = await generate_response(
         mock_query, mock_chunks, max_tokens=150, temperature=0.7
     )
 
     # Assertions
-    assert "used in solar cells" in response
-    assert "unique properties" in response
-    assert "efficiency has improved" in response
+    assert isinstance(response, Dict), "Response should be a Dict."
+    assert "response" in response, "Response should contain a 'response' key."
+    assert "used in solar cells" in response["response"]
+    assert "unique properties" in response["response"]
+    assert "efficiency has improved" in response["response"]

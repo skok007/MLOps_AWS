@@ -10,16 +10,15 @@ DATA_PATH = os.getenv("DATA_PATH")
 
 # Database connection configuration
 db_config = {
-    "dbname": os.environ.get("POSTGRES_DB"),
-    "user": os.environ.get("POSTGRES_USER"),
-    "password": os.environ.get("POSTGRES_PASSWORD"),
-    "host": os.environ.get("POSTGRES_HOST"),
-    "port": os.environ.get("POSTGRES_PORT"),
+    "dbname": os.environ.get("POSTGRES_DB", "test_db"),
+    "user": os.environ.get("POSTGRES_USER", "test_user"),
+    "password": os.environ.get("POSTGRES_PASSWORD", "test_password"),
+    "host": os.environ.get("POSTGRES_HOST", "localhost"),
+    "port": os.environ.get("POSTGRES_PORT", "5432"),
 }
 
-# Test function for the retrieval service - your postgres instance needs to be running.
-@pytest.mark.asyncio
-async def test_retrieve_top_k_chunks():
+# Test function for the retrieval service
+def test_retrieve_top_k_chunks():
     # Mock query and top_k value
     query = "perovskite"
     top_k = 5
@@ -35,7 +34,7 @@ async def test_retrieve_top_k_chunks():
         for doc in documents:
             assert "id" in doc
             assert "title" in doc
-            assert "summary" in doc
+            assert "chunk" in doc
             assert "similarity_score" in doc
     except Exception as e:
         pytest.fail(f"Test failed with error: {str(e)}")
