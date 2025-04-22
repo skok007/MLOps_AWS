@@ -393,5 +393,5 @@ You can refer to the AWS documentation for more information on how to set up sec
 1. https://github.com/cobusgreyling/LlamaIndex/blob/d8902482a247c76c7902ded143a875d5580f072a/Agentic_RAG_Multi_Document_Agents-v1.ipynb
 
 ## Exercise actions
-New line so i can test the new ci-initialsie. yml file
+New line so i can test the new ci-initialsie. yml file. next step is to commit and push
 
