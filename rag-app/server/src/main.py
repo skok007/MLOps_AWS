@@ -22,7 +22,12 @@ async def lifespan_context(app: FastAPI):
     print("Spinning up lifespan context...")
 
     print("Configure opik...")
-    opik.configure()
+    opik.configure(
+        api_key=settings.opik_api_key,
+        workspace=settings.opik_workspace,
+        project_name=settings.opik_project_name,
+        environment=settings.environment
+    )
 
     # Note below is not actually being passed around the app, needs work!
     print("Loading embedding model...")
