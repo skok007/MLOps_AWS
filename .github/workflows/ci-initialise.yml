@@ -24,5 +24,6 @@ jobs:
           
       - name: Run tests
         run: |
+          cd rag-app
           pytest tests/ -v
 
