@@ -1,32 +1,107 @@
+# This workflow runs automated tests whenever code is pushed to any branch
 name: CI Initialise
 
+# Define when the workflow should run
 on:
   push:
     branches:
-      - '*'
+      - '*'  # Run on push to any branch
 
 jobs:
   test:
+    # Run on the latest Ubuntu runner
     runs-on: ubuntu-latest
+    
+    # Define environment variables needed for the application
+    # These variables are used by the application's Settings class
+    env:
+      # Basic application settings
+      ENVIRONMENT: test
+      APP_NAME: rag-app
+      DEBUG: "true"
+      
+      # Database connection settings
+      POSTGRES_HOST: localhost
+      POSTGRES_DB: test_db
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}      # Sensitive value stored in GitHub Secrets
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}  # Sensitive value stored in GitHub Secrets
+      
+      # API endpoints and paths
+      ARXIV_API_URL: https://export.arxiv.org/api/query
+      DATA_PATH: ./data
+      
+      # Model generation parameters
+      TEMPERATURE: "0.7"
+      TOP_P: "0.9"
+      MAX_TOKENS: "1000"
+      
+      # Opik API settings (for AI model evaluation)
+      OPIK_API_KEY: ${{ secrets.OPIK_API_KEY }}
+      OPIK_WORKSPACE: ${{ secrets.OPIK_WORKSPACE }}
+      OPIK_PROJECT_NAME: ${{ secrets.OPIK_PROJECT_NAME }}
+      
+      # OpenAI settings
+      OPENAI_MODEL: gpt-3.5-turbo
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      # Poetry version to use
+      POETRY_VERSION: "1.8.2"
+      
     steps:
+      # Step 1: Check out the code
       - uses: actions/checkout@v4
       
+      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'  # Use Python 3.12 as required by the project
+          cache: 'pip'  # Enable pip caching for faster dependency installation
           
+      # Step 3: Cache Poetry installation
+      # This speeds up the workflow by reusing the Poetry installation
+      - name: Cache Poetry installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.local
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}
+          
+      # Step 4: Cache Poetry dependencies
+      # This speeds up the workflow by reusing the virtual environment
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-deps-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-deps-${{ runner.os }}-
+          
+      # Step 5: Install Poetry package manager
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          # Install specific version of Poetry
+          curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
+          # Configure Poetry to create virtualenvs in the project directory
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
           
+      # Step 6: Install project dependencies
       - name: Install dependencies
-        run: |
-          cd rag-app
-          poetry install
+        working-directory: ./rag-app
+        run: poetry install --no-interaction --no-root  # Install dependencies without user interaction
           
+      # Step 7: Run the test suite
       - name: Run tests
+        working-directory: ./rag-app
         run: |
-          cd rag-app
-          poetry run pytest tests/ -v
+          poetry run pytest tests/ -v --junitxml=test-results.xml  # Run tests and generate XML report
+          
+      # Step 8: Upload test results as artifacts
+      # This makes test results available even if tests fail
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()  # Run even if tests fail
+        with:
+          name: test-results
+          path: rag-app/test-results.xml
 
