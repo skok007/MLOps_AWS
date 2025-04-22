@@ -4,7 +4,7 @@ services:
   postgres:
     build:
       context: .
-      dockerfile: ./postgres/pgvector.Dockerfile
+      dockerfile: ./postgres/pgvector2.Dockerfile
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:

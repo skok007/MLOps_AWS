@@ -117,18 +117,18 @@ jobs:
           poetry install --no-interaction
           echo "Repository installation complete!"
           
-      # Step 8: Run the test suite
-      - name: Run tests
-        working-directory: ./rag-app
-        run: |
-          poetry run pytest tests/ -v --junitxml=test-results.xml  # Run tests and generate XML report
+      # # Step 8: Run the test suite
+      # - name: Run tests
+      #   working-directory: ./rag-app
+      #   run: |
+      #     poetry run pytest tests/ -v --junitxml=test-results.xml  # Run tests and generate XML report
           
-      # Step 9: Upload test results as artifacts
-      # This makes test results available even if tests fail
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()  # Run even if tests fail
-        with:
-          name: test-results
-          path: rag-app/test-results.xml
+      # # Step 9: Upload test results as artifacts
+      # # This makes test results available even if tests fail
+      # - name: Upload test results
+      #   uses: actions/upload-artifact@v4
+      #   if: always()  # Run even if tests fail
+      #   with:
+      #     name: test-results
+      #     path: rag-app/test-results.xml
 

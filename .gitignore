@@ -177,4 +177,4 @@ aws/
 # Certificates
 *.crt
 zscaler_root.crt
-zscaler_root.pem
+ZscalerRootCertificate-2048-SHA256.pem

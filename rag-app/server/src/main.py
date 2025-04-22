@@ -25,7 +25,6 @@ async def lifespan_context(app: FastAPI):
     opik.configure(
         api_key=settings.opik_api_key,
         workspace=settings.opik_workspace,
-        project_name=settings.opik_project_name,
         environment=settings.environment
     )
 

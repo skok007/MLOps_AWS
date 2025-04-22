@@ -1,8 +1,23 @@
-# Stage 1: Build pgvector
+# Stage 1: Certificate setup with HTTP repo workaround
+FROM alpine:latest AS cert-setup
+
+# Override repositories to use HTTP instead of HTTPS to skip SSL verification
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.21/main" > /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories && \
+    apk update && apk add --no-cache ca-certificates && update-ca-certificates
+
+COPY ZscalerRootCertificate-2048-SHA256.pem /usr/local/share/ca-certificates/zscaler.crt
+
+# Re-run after copy to add Zscaler cert
+RUN update-ca-certificates
+
+# Stage 2: Build pgvector with Zscaler cert available
 FROM postgres:alpine AS builder
 
-# Install necessary packages including clang
-RUN apk add --no-cache \
+# Copy trusted certs
+COPY --from=cert-setup /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+
+RUN apk update && apk add --no-cache \
     build-base \
     git \
     postgresql-dev \
@@ -11,17 +26,15 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 
-# Clone, compile, and install pgvector
-RUN git clone --branch v0.5.0 https://github.com/pgvector/pgvector.git \
-    && cd pgvector \
-    && make \
-    && make install
+RUN git clone --branch v0.5.0 https://github.com/pgvector/pgvector.git && \
+    cd pgvector && make && make install
 
-# Stage 2: Final image
+# Stage 3: Final image with pgvector + Zscaler certs
 FROM postgres:alpine
 
-# Copy the compiled pgvector extension to the final image
+COPY --from=cert-setup /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /usr/local/lib/postgresql/ /usr/local/lib/postgresql/
 COPY --from=builder /usr/local/share/postgresql/ /usr/local/share/postgresql/
 
-# Environment variables will be provided by docker-compose
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD pg_isready -U postgres || exit 1

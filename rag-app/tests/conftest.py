@@ -45,7 +45,7 @@ def configure_opik():
     opik.configure(
         api_key=os.environ.get("OPIK_API_KEY"),
         workspace=os.environ.get("OPIK_WORKSPACE"),
-        project_name=os.environ.get("OPIK_PROJECT_NAME"),
+     #   project_name=os.environ.get("OPIK_PROJECT_NAME"),
         environment="test"
     )
     yield

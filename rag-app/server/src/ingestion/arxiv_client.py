@@ -95,6 +95,42 @@ if __name__ == "__main__":
     papers = fetch_papers_paginated(
         query="ti:perovskite", max_results=20, results_per_page=5, wait_time=5
     )
+    # ========================
+    # Query Variant 1: Basic title-only search
+    # ========================
+   #  papers = fetch_papers_paginated(
+   #      query="ti:perovskite", max_results=20, results_per_page=5, wait_time=5
+    # )
+
+    # ========================
+    # Query Variant 2: Title or abstract contains "perovskite"
+    # ========================
+    #papers = fetch_papers_paginated(
+    #    query="ti:perovskite OR abs:perovskite", max_results=20, results_per_page=5, wait_time=5
+    # )
+
+    # ========================
+    # Query Variant 3: Filter to category - materials science in condensed matter
+    # ========================
+    # papers = fetch_papers_paginated(
+    #     query="(ti:perovskite OR abs:perovskite) AND cat:cond-mat.mtrl-sci", max_results=20, results_per_page=5, wait_time=5
+    # )
+
+    # ========================
+    # Query Variant 4: Keyword combo (solar + perovskite in title)
+    # ========================
+    # papers = fetch_papers_paginated(
+    #     query="ti:perovskite AND ti:solar", max_results=20, results_per_page=5, wait_time=5
+    # )
+
+    # ========================
+    # Query Variant 5: Specific author (Michael Grätzel as example)
+    # ========================
+    # papers = fetch_papers_paginated(
+    #     query="ti:perovskite AND au:Grätzel", max_results=20, results_per_page=5, wait_time=5
+    # )
+
+    
     print(papers)
     # This duplicates the save_local option in the function ... TODO: tidy this up and test thoroughly.
     # with open("papers.json", "w") as f:
