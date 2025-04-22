@@ -3,9 +3,9 @@ name: CI Initialise
 
 # Define when the workflow should run
 on:
-  # push:
-  #   branches:
-  #     - '*'  # Run on push to any branch
+  push:
+    branches:
+      - '*'  # Run on push to any branch
   workflow_dispatch:  # Manual trigger only
 
 jobs:
