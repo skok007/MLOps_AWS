@@ -9,8 +9,8 @@ dotenv.load_dotenv()
 
 DATA_PATH = os.getenv('DATA_PATH')
 
-# Load a pre-trained Sentence Transformer model (e.g., 'all-MiniLM-L6-v2')
-model = SentenceTransformer('all-MiniLM-L6-v2') # TODO: Replace with Bedrock embeddings.
+# Load a pre-trained Sentence Transformer model
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2') # TODO: Replace with Bedrock embeddings.
 
 def chunk_text(text: str, max_length: int = 512, overlap: int = 50) -> List[str]:
     """

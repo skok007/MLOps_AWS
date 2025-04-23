@@ -133,6 +133,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+env_311/
+rag-app/env_311/
 
 # Spyder project settings
 .spyderproject

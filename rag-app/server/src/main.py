@@ -13,6 +13,9 @@ from sentence_transformers import SentenceTransformer
 from server.src.config import Settings
 import opik
 
+# Create settings instance
+settings = Settings()
+
 # Async context manager to load in models I want to keep in memory for the app to use.
 @asynccontextmanager
 async def lifespan_context(app: FastAPI):
@@ -24,13 +27,12 @@ async def lifespan_context(app: FastAPI):
     print("Configure opik...")
     opik.configure(
         api_key=settings.opik_api_key,
-        workspace=settings.opik_workspace,
-        environment=settings.environment
+        workspace=settings.opik_workspace
     )
 
     # Note below is not actually being passed around the app, needs work!
     print("Loading embedding model...")
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # Load the model
+    embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")  # Load the model
     try:
         yield {
             "embedding_model": embedding_model

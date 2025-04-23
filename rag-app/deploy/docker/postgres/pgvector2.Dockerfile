@@ -37,4 +37,4 @@ COPY --from=builder /usr/local/lib/postgresql/ /usr/local/lib/postgresql/
 COPY --from=builder /usr/local/share/postgresql/ /usr/local/share/postgresql/
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pg_isready -U postgres || exit 1
+    CMD pg_isready -U ${POSTGRES_USER:-postgres} || exit 1
