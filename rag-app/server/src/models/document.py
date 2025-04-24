@@ -1,38 +1,45 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Optional, List, Dict, Union
 import numpy as np
-
-from pydantic import BaseModel
-from typing import Optional
-
-
-class RetrievedDocument(BaseModel):
-    id: int
-    title: str
-    summary: str
-    chunk: str
-    similarity_score: float
-
-    class Config:
-        orm_mode = True
 
 
 class Document(BaseModel):
-    id: Optional[
-        int
-    ] = None  # Unique identifier for the document, typically set by the database
-    title: str = Field(..., description="The title of the document")
-    summary: str = Field(..., description="A summary or abstract of the document")
-    chunks: List[str] = Field(
-        ..., description="A list of text chunks derived from the document"
-    )
-    embeddings: List[List[float]] = Field(
-        ..., description="A list of embeddings for each chunk"
-    )
-    metadata: Optional[dict] = Field(
-        default=None,
-        description="Optional metadata associated with the document, such as publication date, authors, or tags",
-    )
+    """Base document model."""
+
+    id: Optional[int] = None
+    title: str
+    summary: str
+    chunk: str
+    embedding: Optional[List[float]] = None
 
     class Config:
-        orm_mode = True  # Enables ORM compatibility, useful when integrating with SQLAlchemy or other ORMs
+        """Pydantic model configuration."""
+
+        from_attributes = True
+
+
+class RetrievedDocument(Document):
+    """Document model with similarity score for retrieved documents."""
+
+    similarity_score: float
+
+    class Config:
+        """Pydantic model configuration."""
+
+        from_attributes = True
+
+
+class GenerationRequest(BaseModel):
+    """Request model for text generation."""
+
+    query: str
+    chunks: List[RetrievedDocument]
+    max_tokens: Optional[int] = 200
+    temperature: Optional[float] = 0.7
+
+
+class GenerationResponse(BaseModel):
+    """Response model for text generation."""
+
+    response: str
+    response_tokens_per_second: Optional[float] = None

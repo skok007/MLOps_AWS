@@ -98,15 +98,15 @@ if __name__ == "__main__":
     # ========================
     # Query Variant 1: Basic title-only search
     # ========================
-   #  papers = fetch_papers_paginated(
-   #      query="ti:perovskite", max_results=20, results_per_page=5, wait_time=5
+    # papers = fetch_papers_paginated(
+    #     query="ti:perovskite", max_results=20, results_per_page=5, wait_time=5
     # )
 
     # ========================
     # Query Variant 2: Title or abstract contains "perovskite"
     # ========================
-    #papers = fetch_papers_paginated(
-    #    query="ti:perovskite OR abs:perovskite", max_results=20, results_per_page=5, wait_time=5
+    # papers = fetch_papers_paginated(
+    #     query="ti:perovskite OR abs:perovskite", max_results=20, results_per_page=5, wait_time=5
     # )
 
     # ========================
