@@ -34,9 +34,9 @@ def mock_config():
 
 @pytest.fixture
 def mock_generate_response():
-    """Fixture that mocks the LLM generation process in the generate_response function."""
-    with patch("server.src.services.generation_service.generate_response") as mock_gen:
-        yield mock_gen
+    """Fixture that mocks the LLM generation process in the call_llm function."""
+    with patch("server.src.services.generation_service.call_llm") as mock_llm:
+        yield mock_llm
 
 
 @pytest.fixture(autouse=True)
@@ -45,8 +45,7 @@ def configure_opik():
     try:
         opik.configure(
             api_key=os.environ.get("OPIK_API_KEY"),
-            workspace=os.environ.get("OPIK_WORKSPACE"),
-            environment="test"
+            workspace=os.environ.get("OPIK_WORKSPACE")
         )
         print("Opik configuration successful for tests")
     except Exception as e:

@@ -28,8 +28,7 @@ async def lifespan_context(app: FastAPI):
     try:
         opik.configure(
             api_key=settings.opik_api_key,
-            workspace=settings.opik_workspace,
-            environment=settings.environment
+            workspace=settings.opik_workspace
         )
         print("Opik configuration successful")
     except Exception as e:

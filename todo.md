@@ -375,4 +375,36 @@
    if ! aws iam create-user --user-name $USER_NAME 2>/dev/null; then
      echo "⚠️ User $USER_NAME already exists. Continuing..."
    fi
-   ``` 
+   ```
+
+## Recent Code Fixes
+
+1. **Fixed Opik Configuration**
+   - Removed problematic `project_name` parameter from Opik configuration in both `main.py` and `conftest.py`
+   - Added proper error handling for Opik configuration failures
+   - Improved logging for Opik configuration status
+
+2. **Fixed Test Database Setup**
+   - Added proper cleanup between test runs with `TRUNCATE TABLE papers` statement
+   - Fixed truncated SQL statement in `conftest.py`
+   - Added proper transaction handling with commits
+   - Improved error handling with try/finally blocks for database connections
+   - Ensured database connections are properly closed
+
+3. **Fixed Document Structure Inconsistencies**
+   - Updated `mock_chunks` fixture in `conftest.py` to use "chunk" key instead of "text"
+   - Added additional fields (id, title, similarity_score) to match expected document structure
+   - Updated test assertions in `test_generation_service.py` to match the new document structure
+   - Improved test documentation with clear arguments and assertions sections
+
+4. **Fixed Database Schema Issues**
+   - Added missing "summary" column to test database schema
+   - Updated deduplication SQL to include "summary" column
+   - Updated `retrieve_top_k_chunks` function to include "summary" field in SQL query
+   - Updated `RetrievedDocument` model to include "summary" field
+
+5. **Fixed Test Failures**
+   - Fixed Opik configuration by removing the `environment` parameter that was causing errors
+   - Updated the mocking implementation to mock `call_llm` instead of `generate_response`
+   - Ensured proper error handling in the test fixtures
+   - Fixed the test assertions to match the expected response format 
