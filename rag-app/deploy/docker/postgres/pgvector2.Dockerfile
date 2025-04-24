@@ -32,7 +32,22 @@ RUN git clone --branch v0.5.0 https://github.com/pgvector/pgvector.git && \
 # Stage 3: Final image with pgvector + Zscaler certs
 FROM postgres:alpine
 
+# Copy trusted certs and setup HTTP repositories
 COPY --from=cert-setup /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.21/main" > /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories
+
+# Install locale packages to fix the locale warning
+RUN apk update && apk add --no-cache \
+    musl-locales \
+    musl-locales-lang \
+    tzdata
+
+# Set default locale
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
 COPY --from=builder /usr/local/lib/postgresql/ /usr/local/lib/postgresql/
 COPY --from=builder /usr/local/share/postgresql/ /usr/local/share/postgresql/
 

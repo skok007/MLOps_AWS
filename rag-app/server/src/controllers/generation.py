@@ -61,6 +61,13 @@ async def generate_answer_endpoint(
         generated_response = await generate_response(
             query, chunks, max_tokens, temperature
         )  # is this sync?
+        
+        # Check if generated_response is None
+        if generated_response is None:
+            raise HTTPException(
+                status_code=500, detail="Failed to generate response from the language model."
+            )
+            
         generated_response["query_expanded"] = query_expanded
         print(f"Generated response {generated_response}")
         return generated_response  # {"response": generated_response}

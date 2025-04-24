@@ -8,7 +8,7 @@ from sentence_transformers import SentenceTransformer
 import opik
 
 # Load a pre-trained Sentence Transformer model (e.g., 'all-MiniLM-L6-v2') - ideally retrieve this from app state ...
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+embedding_model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
 
 def get_db_connection(db_config: dict):

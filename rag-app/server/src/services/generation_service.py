@@ -18,6 +18,14 @@ client = OpenAI()
 def call_llm(prompt: str) -> Union[Dict, None]:
     """Call OpenAI's API to generate a response."""
     try:
+        # Check if OpenAI API key is set
+        if not os.environ.get("OPENAI_API_KEY"):
+            print("OpenAI API key not set. Using fallback response.")
+            return {
+                "response": "I'm sorry, but I can't generate a response right now because the OpenAI API key is not configured. Please set the OPENAI_API_KEY environment variable.",
+                "response_tokens_per_second": None
+            }
+            
         response = client.chat.completions.create(
             model=settings.openai_model,  # Ensure this model is defined in settings
             messages=[{"role": "user", "content": prompt}],
@@ -39,7 +47,10 @@ def call_llm(prompt: str) -> Union[Dict, None]:
 
     except Exception as e:
         print(f"Error calling OpenAI API: {e}")
-        return None  # TODO: error handling
+        return {
+            "response": f"I'm sorry, but I encountered an error while generating a response: {str(e)}",
+            "response_tokens_per_second": None
+        }
 
 @opik.track
 async def generate_response(
