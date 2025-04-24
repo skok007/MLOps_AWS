@@ -116,13 +116,21 @@ def setup_test_database():
                 );
             """)
             
-            # Insert test data
-            cur.execute("""
+            # Create a 1536-dimensional vector for testing
+            # We'll use a simple pattern: [0.1, 0.2, 0.3, ..., 0.1, 0.2, 0.3]
+            # This creates a 1536-dimensional vector with repeating values
+            vector_values = []
+            for i in range(1536):
+                vector_values.append(str(0.1 + (i % 3) * 0.1))
+            vector_str = f"[{', '.join(vector_values)}]"
+            
+            # Insert test data with the correct vector dimensions
+            cur.execute(f"""
                 INSERT INTO papers (title, summary, chunk, embedding)
                 VALUES 
-                    ('Test Paper 1', 'Summary of test paper 1', 'Perovskite materials are used in solar cells.', '[0.1, 0.2, 0.3]'::vector),
-                    ('Test Paper 2', 'Summary of test paper 2', 'Perovskites have unique electronic properties.', '[0.2, 0.3, 0.4]'::vector),
-                    ('Test Paper 3', 'Summary of test paper 3', 'The efficiency of perovskite solar cells has improved.', '[0.3, 0.4, 0.5]'::vector)
+                    ('Test Paper 1', 'Summary of test paper 1', 'Perovskite materials are used in solar cells.', '{vector_str}'::vector),
+                    ('Test Paper 2', 'Summary of test paper 2', 'Perovskites have unique electronic properties.', '{vector_str}'::vector),
+                    ('Test Paper 3', 'Summary of test paper 3', 'The efficiency of perovskite solar cells has improved.', '{vector_str}'::vector)
                 ON CONFLICT DO NOTHING;
             """)
             
