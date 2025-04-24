@@ -84,25 +84,22 @@ jobs:
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           
-      # Step 6: Install project dependencies
-      - name: Install dependencies
+      # Step 6: Install project dependencies and repository
+      - name: Install dependencies and repository
         working-directory: ./rag-app
-        run: poetry install --no-interaction --no-root  # Install dependencies without user interaction
-      
-      # Step 7: Install rag-app repository
-      - name: Install rag-app repository
         run: |
-          echo "Installing rag-app repository..."
-          cd rag-app
+          echo "Installing dependencies and repository..."
           poetry install --no-interaction
-          echo "Repository installation complete!"
+          echo "Installation complete!"
       
       # Step 8: Upload workspace for other jobs
       - name: Upload workspace
         uses: actions/upload-artifact@v4
+        if-no-files-found: error  # Fail if no files are found to upload
         with:
           name: workspace
           path: rag-app/.venv
+          retention-days: 1
 
   setup-database:
     name: Setup Database
@@ -136,6 +133,7 @@ jobs:
         with:
           name: workspace
           path: rag-app/.venv
+          if-no-files-found: error  # Fail if artifact is not found
       
       - name: Initialize database
         working-directory: ./rag-app
@@ -211,6 +209,7 @@ jobs:
         with:
           name: workspace
           path: rag-app/.venv
+          if-no-files-found: error  # Fail if artifact is not found
       
       - name: Run linting
         working-directory: ./rag-app
