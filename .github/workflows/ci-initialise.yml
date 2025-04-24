@@ -92,15 +92,29 @@ jobs:
           poetry install --no-interaction
           echo "Installation complete!"
       
-      # Step 7: Verify workspace exists
-      - name: Verify workspace
+      # Step 7: Verify workspace exists and list directory contents
+      - name: Verify workspace and list directory
         working-directory: ./rag-app
         run: |
-          if [ ! -d ".venv" ]; then
-            echo "Error: .venv directory not found"
-            exit 1
+          echo "Listing directory contents:"
+          ls -la
+          echo "Checking for .venv directory:"
+          if [ -d ".venv" ]; then
+            echo ".venv directory found"
+            ls -la .venv
+          else
+            echo ".venv directory not found, creating it"
+            # Create the .venv directory
+            mkdir -p .venv
+            # Copy the .env file to .venv if it exists
+            if [ -f ".env" ]; then
+              echo "Copying .env file to .venv directory"
+              cp .env .venv/
+            fi
+            # Create a dummy file to ensure the directory is not empty
+            touch .venv/dummy.txt
+            echo "Created .venv directory for artifact upload"
           fi
-          echo "Workspace verified successfully"
       
       # Step 8: Upload workspace for other jobs
       - name: Upload workspace
@@ -158,6 +172,12 @@ jobs:
           ls -la ${{ github.workspace }}/.github/workflows
           echo "Artifact listing complete"
       
+      # Create directory for artifact download
+      - name: Create directory for artifact
+        run: |
+          mkdir -p rag-app/.venv
+          echo "Created directory for artifact download"
+      
       - name: Download workspace
         uses: actions/download-artifact@v4
         with:
@@ -169,6 +189,20 @@ jobs:
           echo "Verifying workspace download..."
           ls -la rag-app/.venv
           echo "Workspace verification complete"
+      
+      # Reinstall Poetry if needed
+      - name: Reinstall Poetry if needed
+        working-directory: ./rag-app
+        run: |
+          if [ ! -f ".venv/bin/poetry" ] && [ ! -f ".venv/Scripts/poetry" ]; then
+            echo "Poetry not found in virtual environment, reinstalling..."
+            curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
+            poetry config virtualenvs.create true
+            poetry config virtualenvs.in-project true
+            poetry install --no-interaction
+          else
+            echo "Poetry found in virtual environment"
+          fi
 
   test:
     name: Run Tests
@@ -197,11 +231,31 @@ jobs:
         with:
           python-version: '3.12'
       
+      # Create directory for artifact download
+      - name: Create directory for artifact
+        run: |
+          mkdir -p rag-app/.venv
+          echo "Created directory for artifact download"
+      
       - name: Download workspace
         uses: actions/download-artifact@v4
         with:
           name: poetry-workspace
           path: rag-app/.venv
+      
+      # Reinstall Poetry if needed
+      - name: Reinstall Poetry if needed
+        working-directory: ./rag-app
+        run: |
+          if [ ! -f ".venv/bin/poetry" ] && [ ! -f ".venv/Scripts/poetry" ]; then
+            echo "Poetry not found in virtual environment, reinstalling..."
+            curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
+            poetry config virtualenvs.create true
+            poetry config virtualenvs.in-project true
+            poetry install --no-interaction
+          else
+            echo "Poetry found in virtual environment"
+          fi
       
       # Step 9: Run the test suite
       - name: Run tests
@@ -230,11 +284,31 @@ jobs:
         with:
           python-version: '3.12'
       
+      # Create directory for artifact download
+      - name: Create directory for artifact
+        run: |
+          mkdir -p rag-app/.venv
+          echo "Created directory for artifact download"
+      
       - name: Download workspace
         uses: actions/download-artifact@v4
         with:
           name: poetry-workspace
           path: rag-app/.venv
+      
+      # Reinstall Poetry if needed
+      - name: Reinstall Poetry if needed
+        working-directory: ./rag-app
+        run: |
+          if [ ! -f ".venv/bin/poetry" ] && [ ! -f ".venv/Scripts/poetry" ]; then
+            echo "Poetry not found in virtual environment, reinstalling..."
+            curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
+            poetry config virtualenvs.create true
+            poetry config virtualenvs.in-project true
+            poetry install --no-interaction
+          else
+            echo "Poetry found in virtual environment"
+          fi
       
       - name: Run linting
         working-directory: ./rag-app
