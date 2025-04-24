@@ -34,6 +34,7 @@ def test_retrieve_top_k_chunks():
         for doc in documents:
             assert "id" in doc
             assert "title" in doc
+            assert "summary" in doc
             assert "chunk" in doc
             assert "similarity_score" in doc
     except Exception as e:

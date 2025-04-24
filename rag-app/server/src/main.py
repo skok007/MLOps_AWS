@@ -25,10 +25,16 @@ async def lifespan_context(app: FastAPI):
     print("Spinning up lifespan context...")
 
     print("Configure opik...")
-    opik.configure(
-        api_key=settings.opik_api_key,
-        workspace=settings.opik_workspace
-    )
+    try:
+        opik.configure(
+            api_key=settings.opik_api_key,
+            workspace=settings.opik_workspace,
+            environment=settings.environment
+        )
+        print("Opik configuration successful")
+    except Exception as e:
+        print(f"Warning: Opik configuration failed: {str(e)}")
+        print("Application will continue without Opik tracking")
 
     # Note below is not actually being passed around the app, needs work!
     print("Loading embedding model...")

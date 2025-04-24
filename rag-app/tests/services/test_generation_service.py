@@ -13,107 +13,99 @@ from server.src.services.generation_service import generate_response
 async def test_generate_response_basic(
     mock_query, mock_chunks, mock_config, mock_generate_response
 ):
-    # Mock the response from the LLM
     """Test the basic functionality of the generate_response function.
 
     This test verifies that the function correctly processes a basic query
     with provided mock document chunks and configuration. It ensures that
     the response includes pertinent information from both the query and context.
 
-    Mocks:
-        mock_generate_response: Simulates the LLM's response to return a predefined
-            response containing 'perovskites' and 'solar cells'.
+    Args:
+        mock_query: The mock query input for testing
+        mock_chunks: List of mock document chunks with id, title, chunk, and similarity_score
+        mock_config: Configuration settings for the generation
+        mock_generate_response: Mock for the LLM response generation
 
     Assertions:
-        - The response is either a dictionary or None.
-        - The response includes the keyword 'perovskites'.
-        - The response references 'solar cells', indicating it utilizes context
-          from the retrieved chunks.
+        - The response is a dictionary containing the expected keys
+        - The response includes content from the query and context
+        - The response structure matches the expected format
     """
     mock_generate_response.return_value = {
         "response": "Here is information about perovskites: They are used in solar cells.",
-        "eval_count": 100,
-        "eval_duration": 0.1,
+        "response_tokens_per_second": 100.0
     }
 
-    # Call the function under test. use await to make the function asynchronous
     response = await generate_response(mock_query, mock_chunks, **mock_config)
-    print(response)
-    # Assertions
-    assert isinstance(response, Dict), "Response should be a Dict."
-    assert "response" in response, "Response should contain a 'response' key."
-    assert (
-        "perovskites" in response["response"]
-    ), "Response should contain relevant query content."
-    assert (
-        "solar cells" in response["response"]
-    ), "Response should refer to context from retrieved chunks."
+
+    assert isinstance(response, dict), "Response should be a dictionary"
+    assert "response" in response, "Response should contain a 'response' key"
+    assert "response_tokens_per_second" in response, "Response should contain token rate information"
+    assert "perovskites" in response["response"].lower(), "Response should contain query content"
+    assert "solar cells" in response["response"].lower(), "Response should reference context from chunks"
 
 
 @pytest.mark.asyncio
 async def test_generate_response_empty_chunks(
     mock_query, mock_config, mock_generate_response
 ):
-    # Mock response for empty chunks
-    """
-    Test the generate_response function with an empty list of chunks.
+    """Test the generate_response function with an empty list of chunks.
 
-    This test verifies that the function returns a specific message when provided with
-    an empty list of document chunks, ensuring that it handles cases where no context
-    is available for response generation.
+    This test verifies that the function handles the case of no context
+    appropriately and returns a meaningful response.
 
-    Mocks:
-        mock_generate_response: Mocks the LLM's response to return a predefined
-        message indicating no relevant information was found.
+    Args:
+        mock_query: The mock query input for testing
+        mock_config: Configuration settings for the generation
+        mock_generate_response: Mock for the LLM response generation
 
     Assertions:
-        - The response matches the expected message for empty chunks.
+        - The response indicates no relevant information was found
+        - The response structure matches the expected format
     """
-    mock_generate_response.return_value = (
-        "No relevant information found for perovskites in solar cells."
-    )
+    mock_generate_response.return_value = {
+        "response": "No relevant information found for the query.",
+        "response_tokens_per_second": None
+    }
 
-    # Call the function with an empty list of chunks
     response = await generate_response(mock_query, [], **mock_config)
 
-    # Assertions
-    assert isinstance(response, Dict), "Response should be a Dict."
-    assert "response" in response, "Response should contain a 'response' key."
-    assert (
-        response["response"] == "No relevant information found for perovskites in solar cells."
-    ), "Should return a specific message for empty chunks."
+    assert isinstance(response, dict), "Response should be a dictionary"
+    assert "response" in response, "Response should contain a 'response' key"
+    assert "response_tokens_per_second" in response, "Response should contain token rate information"
+    assert "no relevant information" in response["response"].lower(), "Response should indicate no context found"
 
 
 @pytest.mark.asyncio
 async def test_generate_response_high_temperature(
     mock_query, mock_chunks, mock_generate_response
 ):
-    # Mock response for high temperature setting
-    """
+    """Test the generate_response function with a high temperature setting.
+
+    This test verifies that the function respects temperature settings
+    and token limits while generating responses.
+
     Args:
-        mock_query: The mock query input for testing.
-        mock_chunks: The mock document chunks for testing.
-        mock_generate_response: A mocked version of the generate_response function.
+        mock_query: The mock query input for testing
+        mock_chunks: List of mock document chunks with id, title, chunk, and similarity_score
+        mock_generate_response: Mock for the LLM response generation
 
-    Test the generate_response function with a high temperature setting.
-
-    This test checks whether the function behaves as expected when given a high
-    temperature setting, ensuring it returns a string response and respects
-    the max_tokens limit.
+    Assertions:
+        - The response respects the max_tokens limit
+        - The response structure matches the expected format
     """
-    mock_generate_response.return_value = (
-        "Perovskites might revolutionize solar cells with surprising applications."
-    )
+    mock_generate_response.return_value = {
+        "response": "Perovskites might revolutionize solar cells with surprising applications.",
+        "response_tokens_per_second": 150.0
+    }
 
-    # Call the function with a high temperature setting
     response = await generate_response(
         mock_query, mock_chunks, max_tokens=150, temperature=1.5
     )
 
-    # Assertions
-    assert isinstance(response, Dict), "Response should be a Dict."
-    assert "response" in response, "Response should contain a 'response' key."
-    assert len(response["response"].split()) <= 150, "Response should respect the max_tokens limit."
+    assert isinstance(response, dict), "Response should be a dictionary"
+    assert "response" in response, "Response should contain a 'response' key"
+    assert "response_tokens_per_second" in response, "Response should contain token rate information"
+    assert len(response["response"].split()) <= 150, "Response should respect max_tokens limit"
 
 
 @pytest.mark.asyncio
@@ -155,34 +147,32 @@ async def test_generate_response_long_query(mock_chunks, mock_generate_response)
 async def test_generate_response_with_multiple_chunks(
     mock_query, mock_chunks, mock_generate_response
 ):
-    """
-    Test generate_response with multiple chunks.
+    """Test generate_response with multiple chunks.
 
-    This test verifies that the generate_response function can handle
-    multiple chunks and produce a valid response.
+    This test verifies that the function can handle multiple chunks
+    and produce a coherent response incorporating information from all chunks.
 
-    Mocks:
-        mock_generate_response: Mocks the response from the LLM to return a
-            predefined string containing 'Perovskites', 'solar cells',
-            'unique properties', and 'efficiency has improved'.
+    Args:
+        mock_query: The mock query input for testing
+        mock_chunks: List of mock document chunks with id, title, chunk, and similarity_score
+        mock_generate_response: Mock for the LLM response generation
 
     Assertions:
-        - The response contains the keywords 'Perovskites', 'solar cells',
-          'unique properties', and 'efficiency has improved'.
+        - The response incorporates content from multiple chunks
+        - The response structure matches the expected format
     """
-    mock_generate_response.return_value = (
-        "Perovskites are used in solar cells and have unique properties. "
-        "Their efficiency has recently improved."
-    )
+    mock_generate_response.return_value = {
+        "response": "Perovskites are used in solar cells and have unique properties. Their efficiency has recently improved.",
+        "response_tokens_per_second": 200.0
+    }
 
-    # Call the function with multiple chunks
     response = await generate_response(
         mock_query, mock_chunks, max_tokens=150, temperature=0.7
     )
 
-    # Assertions
-    assert isinstance(response, Dict), "Response should be a Dict."
-    assert "response" in response, "Response should contain a 'response' key."
-    assert "used in solar cells" in response["response"]
-    assert "unique properties" in response["response"]
-    assert "efficiency has improved" in response["response"]
+    assert isinstance(response, dict), "Response should be a dictionary"
+    assert "response" in response, "Response should contain a 'response' key"
+    assert "response_tokens_per_second" in response, "Response should contain token rate information"
+    assert "used in solar cells" in response["response"].lower()
+    assert "unique properties" in response["response"].lower()
+    assert "efficiency has improved" in response["response"].lower()

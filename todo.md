@@ -244,4 +244,135 @@
        answer = f"⚠️ Error: {response['error']}"
    else:
        answer = response.get("response", "No response from server.")  # Changed from "answer" to "response"
+   ```
+
+## AWS Setup Improvements
+
+1. **Created Consolidated AWS Bedrock Setup Script**
+   - Developed `setup-aws-bedrock.sh` to replace multiple separate scripts
+   - Implemented command-line arguments for flexibility and customization
+   - Added comprehensive error handling and validation
+   ```bash
+   # Basic usage with defaults
+   ./setup-aws-bedrock.sh
+
+   # Custom region and user
+   ./setup-aws-bedrock.sh --region us-east-1 --user my-user
+
+   # Store credentials in Secrets Manager
+   ./setup-aws-bedrock.sh --store-secret
+
+   # Skip policy creation (use existing policies)
+   ./setup-aws-bedrock.sh --skip-policies
+   ```
+
+2. **Implemented Dynamic Account ID Retrieval**
+   - Added functionality to automatically retrieve AWS account ID
+   - Provided fallback to environment variable if automatic retrieval fails
+   ```bash
+   # Get the AWS account ID dynamically if not provided
+   if [ -z "$AWS_ACCOUNT_ID" ]; then
+     echo "AWS_ACCOUNT_ID not set. Attempting to retrieve it automatically..."
+     AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+     if [ $? -ne 0 ]; then
+       handle_error "Failed to retrieve AWS account ID automatically. Please set the AWS_ACCOUNT_ID environment variable manually."
+     fi
+     echo "✅ Retrieved AWS account ID: $AWS_ACCOUNT_ID"
+   fi
+   ```
+
+3. **Created Service-Specific IAM Policies**
+   - Developed `create-policies.sh` to create granular policies for each AWS service
+   - Replaced overly permissive AdministratorAccess policy with specific permissions
+   - Implemented policies for Bedrock, ECR, ECS, EC2, CloudWatch, CloudFormation, S3, and Lambda
+   ```bash
+   # Create Bedrock policy
+   cat <<EOF > bedrock-policy.json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": [
+           "bedrock:InvokeModel",
+           "bedrock:ListFoundationModels",
+           "bedrock:ListCustomModels"
+         ],
+         "Resource": "*"
+       }
+     ]
+   }
+   EOF
+
+   aws iam create-policy \
+     --policy-name BedrockAccessPolicy \
+     --policy-document file://bedrock-policy.json
+   ```
+
+4. **Added Comprehensive Documentation**
+   - Created `AWS_README.md` with detailed setup instructions
+   - Included troubleshooting guide for common issues
+   - Added security best practices and examples of different use cases
+   - Provided step-by-step instructions for both automated and manual setup
+
+5. **Implemented Modular Script Structure**
+   - Organized `setup-aws-bedrock.sh` into functions for each major step
+   - Created reusable functions for error handling and command validation
+   - Added detailed comments explaining each section of the script
+   ```bash
+   # Function to create IAM user
+   create_iam_user() {
+     echo "Creating IAM user $USER_NAME..."
+     # Implementation details...
+   }
+
+   # Function to create Bedrock policy
+   create_bedrock_policy() {
+     echo "Creating custom policy for BedrockAccessPolicy..."
+     # Implementation details...
+   }
+
+   # Function to create role
+   create_role() {
+     echo "Creating role $ROLE_NAME..."
+     # Implementation details...
+   }
+   ```
+
+6. **Added Secrets Management Integration**
+   - Implemented option to store credentials in AWS Secrets Manager
+   - Added functionality to create or update secrets as needed
+   - Provided secure handling of sensitive information
+   ```bash
+   # Function to store credentials in Secrets Manager
+   store_credentials() {
+     echo "Storing credentials in AWS Secrets Manager..."
+     # Implementation details...
+     
+     # Create or update the secret
+     if [[ $EXISTING_SECRET == *"$SECRET_NAME"* ]]; then
+       echo "🔁 Secret already exists. Updating value..."
+       # Update existing secret...
+     else
+       echo "🆕 Creating new secret '$SECRET_NAME'..."
+       # Create new secret...
+     fi
+   }
+   ```
+
+7. **Improved Error Handling and User Feedback**
+   - Added clear error messages with actionable solutions
+   - Implemented graceful handling of existing resources
+   - Added progress indicators and success messages
+   ```bash
+   # Function to handle errors
+   handle_error() {
+     echo "❌ Error: $1"
+     exit 1
+   }
+
+   # Example of graceful handling of existing resources
+   if ! aws iam create-user --user-name $USER_NAME 2>/dev/null; then
+     echo "⚠️ User $USER_NAME already exists. Continuing..."
+   fi
    ``` 

@@ -9,6 +9,7 @@ from typing import Optional
 class RetrievedDocument(BaseModel):
     id: int
     title: str
+    summary: str
     chunk: str
     similarity_score: float
 

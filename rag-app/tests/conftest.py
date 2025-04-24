@@ -17,9 +17,9 @@ def mock_query():
 def mock_chunks():
     """Fixture to provide mock retrieved document chunks for generation tests."""
     return [
-        {"text": "Perovskite materials are used in solar cells."},
-        {"text": "Perovskites have unique electronic properties."},
-        {"text": "The efficiency of perovskite solar cells has improved."},
+        {"id": 1, "title": "Test Paper 1", "chunk": "Perovskite materials are used in solar cells.", "similarity_score": 0.8},
+        {"id": 2, "title": "Test Paper 2", "chunk": "Perovskites have unique electronic properties.", "similarity_score": 0.7},
+        {"id": 3, "title": "Test Paper 3", "chunk": "The efficiency of perovskite solar cells has improved.", "similarity_score": 0.6},
     ]
 
 
@@ -42,12 +42,16 @@ def mock_generate_response():
 @pytest.fixture(autouse=True)
 def configure_opik():
     """Configure Opik for testing environment."""
-    opik.configure(
-        api_key=os.environ.get("OPIK_API_KEY"),
-        workspace=os.environ.get("OPIK_WORKSPACE"),
-     #   project_name=os.environ.get("OPIK_PROJECT_NAME"),
-        environment="test"
-    )
+    try:
+        opik.configure(
+            api_key=os.environ.get("OPIK_API_KEY"),
+            workspace=os.environ.get("OPIK_WORKSPACE"),
+            environment="test"
+        )
+        print("Opik configuration successful for tests")
+    except Exception as e:
+        print(f"Warning: Opik configuration failed for tests: {str(e)}")
+        print("Tests will continue without Opik tracking")
     yield
 
 
@@ -93,19 +97,37 @@ def setup_test_database():
                 CREATE TABLE IF NOT EXISTS papers (
                     id SERIAL PRIMARY KEY,
                     title TEXT NOT NULL,
+                    summary TEXT NOT NULL,
                     chunk TEXT NOT NULL,
                     embedding vector(384)
                 );
                 
-                -- Insert some test data
-                INSERT INTO papers (title, chunk, embedding) VALUES
-                ('Test Paper 1', 'Perovskite materials are used in solar cells.', 
+                -- Clear existing test data
+                TRUNCATE TABLE papers;
+                
+                -- Insert test data
+                INSERT INTO papers (title, summary, chunk, embedding) VALUES
+                ('Test Paper 1', 'This paper discusses perovskite materials used in solar cells.', 
+                 'Perovskite materials are used in solar cells.', 
                  array_fill(0.1, ARRAY[384])),
-                ('Test Paper 2', 'Perovskites have unique electronic properties.', 
+                ('Test Paper 2', 'This paper explores the unique electronic properties of perovskites.', 
+                 'Perovskites have unique electronic properties.', 
                  array_fill(0.2, ARRAY[384])),
-                ('Test Paper 3', 'The efficiency of perovskite solar cells has improved.', 
+                ('Test Paper 3', 'This paper reports on improved efficiency of perovskite solar cells.', 
+                 'The efficiency of perovskite solar cells has improved.', 
                  array_fill(0.3, ARRAY[384]));
             """)
+            conn.commit()
+    finally:
+        conn.close()
+
+    yield  # Allow tests to run
+
+    # Cleanup after all tests
+    conn = psycopg2.connect(**db_config)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE papers;")
             conn.commit()
     finally:
         conn.close()

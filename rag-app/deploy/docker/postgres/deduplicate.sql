@@ -9,11 +9,13 @@ WHERE
                 SELECT
                     id,
                     title,
-										chunk,
+                    summary,
+                    chunk,
                     row_number() OVER (
                         PARTITION BY
                             title,
-														chunk,
+                            summary,
+                            chunk,
                             embedding
                         ORDER BY
                             id

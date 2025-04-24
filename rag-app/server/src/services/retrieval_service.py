@@ -35,7 +35,7 @@ def retrieve_top_k_chunks(query: str, top_k: int, db_config: dict) -> List[Dict]
         db_config (dict): Dictionary containing Postgres connection details.
 
     Returns:
-        List[Dict]: A list of dictionaries containing the top_k chunks with their titles and summaries.
+        List[Dict]: A list of dictionaries containing the top_k chunks with their titles, summaries, and similarity scores.
     """
     # Generate the embedding for the query
     # embedding_model = (
@@ -53,7 +53,7 @@ def retrieve_top_k_chunks(query: str, top_k: int, db_config: dict) -> List[Dict]
 
         # SQL query to find the top_k chunks using cosine similarity
         query = """
-        SELECT id, title, chunk, embedding <=> %s::vector AS similarity
+        SELECT id, title, summary, chunk, embedding <=> %s::vector AS similarity
         FROM papers
         ORDER BY similarity ASC
         LIMIT %s;
@@ -65,7 +65,7 @@ def retrieve_top_k_chunks(query: str, top_k: int, db_config: dict) -> List[Dict]
 
         # Prepare the results
         results = [
-            {"id": row[0], "title": row[1], "chunk": row[2], "similarity_score": row[3]}
+            {"id": row[0], "title": row[1], "summary": row[2], "chunk": row[3], "similarity_score": row[4]}
             for row in rows
         ]
 
