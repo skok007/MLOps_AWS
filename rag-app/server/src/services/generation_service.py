@@ -27,7 +27,9 @@ def get_openai_client(api_key: Optional[str] = None) -> OpenAI:
     """
     key = api_key or os.environ.get("OPENAI_API_KEY")
     if not key:
-        raise ValueError("OpenAI API key must be provided either directly or via OPENAI_API_KEY environment variable")
+        raise ValueError(
+            "OpenAI API key must be provided either directly or via OPENAI_API_KEY environment variable"
+        )
     return OpenAI(api_key=key)
 
 @lru_cache()
@@ -86,7 +88,7 @@ def call_llm(prompt: str, client: Optional[OpenAI] = None) -> Dict[str, Union[st
 @opik.track
 async def generate_response(
     query: str,
-    chunks: List[Dict],
+    chunks: list,
     max_tokens: int = 200,
     temperature: float = 0.7,
     client: Optional[OpenAI] = None
@@ -96,21 +98,61 @@ async def generate_response(
     
     Args:
         query (str): The user query to respond to
-        chunks (List[Dict]): List of document chunks containing context
+        chunks (list): List of document chunks containing context
         max_tokens (int): Maximum number of tokens to generate in response
-        temperature (float): Sampling temperature for response generation
-        client (Optional[OpenAI]): OpenAI client instance for dependency injection
+        temperature (float): Temperature parameter for response generation
+        client (Optional[OpenAI]): OpenAI client instance
         
     Returns:
         Dict containing the generated response and metadata
     """
-    QUERY_PROMPT = """
-    You are a helpful AI language assistant, please use the following context to answer the query. Answer in English.
-    Context: {context}
-    Query: {query}
-    Answer:
+    # Format the context from chunks
+    context = format_context_from_chunks(chunks)
+    
+    # Create the prompt with the query and context
+    prompt = create_prompt_with_context(query, context)
+    
+    # Call the LLM with the prompt
+    result = call_llm(prompt, client)
+    
+    return result
+
+def format_context_from_chunks(chunks: list) -> str:
     """
-    # Concatenate documents' summaries as the context for generation
-    context = "\n".join([chunk["chunk"] for chunk in chunks])
-    prompt = QUERY_PROMPT.format(context=context, query=query)
-    return call_llm(prompt, client=client)
+    Format document chunks into a context string for the prompt.
+    
+    Args:
+        chunks (list): List of document chunks
+        
+    Returns:
+        str: Formatted context string
+    """
+    if not chunks:
+        return "No relevant context available."
+    
+    formatted_chunks = []
+    for i, chunk in enumerate(chunks, 1):
+        title = chunk.get("title", "Untitled")
+        content = chunk.get("chunk", "")
+        formatted_chunks.append(f"Document {i} - {title}:\n{content}\n")
+    
+    return "\n".join(formatted_chunks)
+
+def create_prompt_with_context(query: str, context: str) -> str:
+    """
+    Create a prompt that includes the user query and relevant context.
+    
+    Args:
+        query (str): The user query
+        context (str): Formatted context from document chunks
+        
+    Returns:
+        str: Complete prompt for the language model
+    """
+    return f"""You are a helpful AI assistant that provides information based on the following context:
+
+{context}
+
+User Query: {query}
+
+Please provide a comprehensive answer based on the information in the context above. If the context doesn't contain relevant information to answer the query, please say so."""

@@ -1,5 +1,4 @@
 import pytest
-from server.src.services.generation_service import generate_response
 from unittest.mock import patch
 import opik
 import os
@@ -17,9 +16,24 @@ def mock_query():
 def mock_chunks():
     """Fixture to provide mock retrieved document chunks for generation tests."""
     return [
-        {"id": 1, "title": "Test Paper 1", "chunk": "Perovskite materials are used in solar cells.", "similarity_score": 0.8},
-        {"id": 2, "title": "Test Paper 2", "chunk": "Perovskites have unique electronic properties.", "similarity_score": 0.7},
-        {"id": 3, "title": "Test Paper 3", "chunk": "The efficiency of perovskite solar cells has improved.", "similarity_score": 0.6},
+        {
+            "id": 1, 
+            "title": "Test Paper 1", 
+            "chunk": "Perovskite materials are used in solar cells.", 
+            "similarity_score": 0.8
+        },
+        {
+            "id": 2, 
+            "title": "Test Paper 2", 
+            "chunk": "Perovskites have unique electronic properties.", 
+            "similarity_score": 0.7
+        },
+        {
+            "id": 3, 
+            "title": "Test Paper 3", 
+            "chunk": "The efficiency of perovskite solar cells has improved.", 
+            "similarity_score": 0.6
+        },
     ]
 
 
@@ -98,35 +112,31 @@ def setup_test_database():
                     title TEXT NOT NULL,
                     summary TEXT NOT NULL,
                     chunk TEXT NOT NULL,
-                    embedding vector(384)
+                    embedding vector(1536)
                 );
-                
-                -- Clear existing test data
-                TRUNCATE TABLE papers;
-                
-                -- Insert test data
-                INSERT INTO papers (title, summary, chunk, embedding) VALUES
-                ('Test Paper 1', 'This paper discusses perovskite materials used in solar cells.', 
-                 'Perovskite materials are used in solar cells.', 
-                 array_fill(0.1, ARRAY[384])),
-                ('Test Paper 2', 'This paper explores the unique electronic properties of perovskites.', 
-                 'Perovskites have unique electronic properties.', 
-                 array_fill(0.2, ARRAY[384])),
-                ('Test Paper 3', 'This paper reports on improved efficiency of perovskite solar cells.', 
-                 'The efficiency of perovskite solar cells has improved.', 
-                 array_fill(0.3, ARRAY[384]));
             """)
+            
+            # Insert test data
+            cur.execute("""
+                INSERT INTO papers (title, summary, chunk, embedding)
+                VALUES 
+                    ('Test Paper 1', 'Summary of test paper 1', 'Perovskite materials are used in solar cells.', '[0.1, 0.2, 0.3]'::vector),
+                    ('Test Paper 2', 'Summary of test paper 2', 'Perovskites have unique electronic properties.', '[0.2, 0.3, 0.4]'::vector),
+                    ('Test Paper 3', 'Summary of test paper 3', 'The efficiency of perovskite solar cells has improved.', '[0.3, 0.4, 0.5]'::vector)
+                ON CONFLICT DO NOTHING;
+            """)
+            
             conn.commit()
     finally:
         conn.close()
-
-    yield  # Allow tests to run
-
-    # Cleanup after all tests
+    
+    yield
+    
+    # Clean up after tests
     conn = psycopg2.connect(**db_config)
     try:
         with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE papers;")
+            cur.execute("DROP TABLE IF EXISTS papers;")
             conn.commit()
     finally:
         conn.close()

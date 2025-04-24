@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field, ConfigDict
 
+
 class Settings(BaseSettings):
     # Define your configuration fields here with optional defaults
     environment: str = Field(..., json_schema_extra={"env": "ENVIRONMENT"})
@@ -13,7 +14,9 @@ class Settings(BaseSettings):
     postgres_port: int = 5432  # default
     postgres_db: str = Field(..., json_schema_extra={"env": "POSTGRES_DB"})
     postgres_user: str = Field(..., json_schema_extra={"env": "POSTGRES_USER"})
-    postgres_password: str = Field(..., json_schema_extra={"env": "POSTGRES_PASSWORD"})
+    postgres_password: str = Field(
+        ..., json_schema_extra={"env": "POSTGRES_PASSWORD"}
+    )
 
     # ingestion config
     arxiv_api_url: str = Field(..., json_schema_extra={"env": "ARXIV_API_URL"})
@@ -35,5 +38,6 @@ class Settings(BaseSettings):
     rag_config: dict = {}
 
     model_config = ConfigDict(env_file=".env")  # Load variables from .env if they exist
+
 
 settings = Settings()
