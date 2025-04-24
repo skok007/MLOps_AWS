@@ -35,6 +35,7 @@ env:
   OPIK_API_KEY: ${{ secrets.OPIK_API_KEY }}
   OPIK_WORKSPACE: ${{ secrets.OPIK_WORKSPACE }}
   OPIK_ENVIRONMENT: test
+  OPIK_PROJECT_NAME: rag-app-test
   
   # OpenAI settings
   OPENAI_MODEL: gpt-3.5-turbo
