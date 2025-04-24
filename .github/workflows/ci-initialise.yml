@@ -162,7 +162,15 @@ jobs:
           name: test-results
           path: rag-app/test-results.xml
       
-      # Step 13: Run linting
+      # Step 13: Install linting tools
+      - name: Install linting tools
+        working-directory: ./rag-app
+        run: |
+          echo "Installing linting tools..."
+          poetry add --group dev flake8 black isort
+          echo "Linting tools installation complete"
+      
+      # Step 14: Run linting
       - name: Run linting
         working-directory: ./rag-app
         run: |
@@ -170,7 +178,7 @@ jobs:
           poetry run black --check server/src tests
           poetry run isort --check-only server/src tests
       
-      # Step 14: Build Docker images
+      # Step 15: Build Docker images
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
