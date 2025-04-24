@@ -133,7 +133,6 @@ jobs:
         with:
           name: workspace
           path: rag-app/.venv
-          if-no-files-found: error  # Fail if artifact is not found
       
       - name: Initialize database
         working-directory: ./rag-app
@@ -209,7 +208,6 @@ jobs:
         with:
           name: workspace
           path: rag-app/.venv
-          if-no-files-found: error  # Fail if artifact is not found
       
       - name: Run linting
         working-directory: ./rag-app
