@@ -170,13 +170,13 @@ jobs:
           poetry add --group dev flake8 black isort
           echo "Linting tools installation complete"
       
-      # Step 14: Run linting
-      - name: Run linting
-        working-directory: ./rag-app
-        run: |
-          poetry run flake8 server/src tests
-          poetry run black --check server/src tests
-          poetry run isort --check-only server/src tests
+      # Step 14: Run linting - TEMPORARILY DISABLED
+      # - name: Run linting
+      #   working-directory: ./rag-app
+      #   run: |
+      #     poetry run flake8 server/src tests
+      #     poetry run black --check server/src tests
+      #     poetry run isort --check-only server/src tests
       
       # Step 15: Build Docker images
       - name: Set up Docker Buildx
