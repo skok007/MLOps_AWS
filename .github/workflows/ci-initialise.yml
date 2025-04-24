@@ -4,9 +4,9 @@ name: CI Pipeline
 # Define when the workflow should run
 on:
   push:
-    branches:
-      - '*'  # Run on push to any branch
-  workflow_dispatch:  # Manual trigger only
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 # Define environment variables needed for the application
 env:
@@ -45,16 +45,15 @@ env:
   POETRY_VERSION: "1.8.2"
 
 jobs:
-  ci:
-    name: CI Pipeline
+  ci-pipeline:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: ankane/pgvector:latest
+        image: postgres:latest
         env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
         ports:
           - 5432:5432
         options: >-
@@ -62,140 +61,56 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
-      # Step 1: Check out the code
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      # Step 2: Set up Python environment
+      - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
-          
-      # Step 3: Cache Poetry installation
-      - name: Cache Poetry installation
-        uses: actions/cache@v3
-        with:
-          path: ~/.local
-          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}
-          
-      # Step 4: Cache Poetry dependencies
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-deps-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            poetry-deps-${{ runner.os }}-
-          
-      # Step 5: Install Poetry package manager
+          python-version: '3.11'
+
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
-          poetry config virtualenvs.create true
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Configure Poetry
+        run: |
           poetry config virtualenvs.in-project true
-          
-      # Step 6: Install project dependencies
+
       - name: Install dependencies
-        working-directory: ./rag-app
         run: |
-          echo "Installing dependencies..."
-          poetry install --no-interaction
-          echo "Installation complete!"
-          
-      # Step 7: Verify Poetry environment
-      - name: Verify Poetry environment
-        working-directory: ./rag-app
-        run: |
-          echo "Verifying Poetry environment..."
-          if [ -d ".venv" ]; then
-            echo ".venv directory found"
-            ls -la .venv
-          else
-            echo ".venv directory not found, checking for other virtual environment directories"
-            if [ -d "venv" ]; then
-              echo "venv directory found"
-              ls -la venv
-            elif [ -d ".virtualenv" ]; then
-              echo ".virtualenv directory found"
-              ls -la .virtualenv
-            else
-              echo "No virtual environment directory found, creating one"
-              mkdir -p .venv
-              touch .venv/dummy.txt
-              echo "Created dummy .venv directory"
-            fi
-          fi
-      
-      # Step 8: Wait for PostgreSQL to be ready
+          cd rag-app/server
+          poetry install
+
       - name: Wait for PostgreSQL
-        run: sleep 5
-      
-      # Step 9: Install psycopg2 for database connection
-      - name: Install psycopg2
-        working-directory: ./rag-app
         run: |
-          echo "Installing psycopg2..."
-          poetry add psycopg2-binary
-          echo "psycopg2 installation complete"
-      
-      # Step 10: Initialize database
-      - name: Initialize database
-        working-directory: ./rag-app
+          until PGPASSWORD=postgres psql -h localhost -U postgres -d test_db -c '\q'; do
+            echo "PostgreSQL is unavailable - sleeping"
+            sleep 1
+          done
+          echo "PostgreSQL is up - executing command"
+
+      - name: Run linting
         run: |
-          poetry run python -c "import psycopg2; conn = psycopg2.connect(dbname='test_db', user='test_user', password='test_password', host='localhost'); conn.close()"
-          echo "Database connection successful"
-      
-      # Step 11: Run the test suite - TEMPORARILY DISABLED
-      # NOTE: Tests are disabled due to certificate access limitations in the CI environment.
-      # The application requires Zscaler certificates for certain operations, which cannot be
-      # shared in the public repository for security reasons. These tests should be run locally
-      # where the certificates are properly configured.
-      # - name: Run tests
-      #   working-directory: ./rag-app
-      #   run: |
-      #     poetry run pytest tests/ -v --junitxml=test-results.xml
-          
-      # Step 12: Upload test results as artifacts - TEMPORARILY DISABLED
-      # - name: Upload test results
-      #   uses: actions/upload-artifact@v4
-      #   if: always()
-      #   with:
-      #     name: test-results
-      #     path: rag-app/test-results.xml
-      
-      # Step 13: Install linting tools
-      - name: Install linting tools
-        working-directory: ./rag-app
+          cd rag-app/server
+          poetry run flake8 src/
+          poetry run black --check src/
+          poetry run isort --check-only src/
+
+      - name: Run tests
         run: |
-          echo "Installing linting tools..."
-          poetry add --group dev flake8 black isort
-          echo "Linting tools installation complete"
-      
-      # Step 14: Run linting - TEMPORARILY DISABLED
-      # - name: Run linting
-      #   working-directory: ./rag-app
-      #   run: |
-      #     poetry run flake8 server/src tests
-      #     poetry run black --check server/src tests
-      #     poetry run isort --check-only server/src tests
-      
-      # Step 15: Build Docker images - TEMPORARILY DISABLED
-      # NOTE: Docker builds are disabled due to certificate access limitations.
-      # The PostgreSQL image build requires Zscaler certificates which cannot be
-      # shared in the public repository for security reasons.
-      # - name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v3
-      
-      # - name: Build PostgreSQL image
-      #   working-directory: ./rag-app/deploy/docker/postgres
-      #   run: |
-      #     docker build -t rag-app-postgres:latest -f pgvector2.Dockerfile .
-      
-      # - name: Build application image
-      #   working-directory: ./rag-app
-      #   run: |
-      #     docker build -t rag-app:latest -f Dockerfile .
+          cd rag-app/server
+          poetry run pytest tests/ -v
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPIK_API_KEY: ${{ secrets.OPIK_API_KEY }}
+          OPIK_API_URL: ${{ secrets.OPIK_API_URL }}
+          VECTOR_DIMENSION: 1536
+          OPENAI_MODEL: gpt-4-turbo-preview
 

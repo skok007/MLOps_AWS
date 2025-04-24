@@ -1,5 +1,5 @@
 from sentence_transformers import SentenceTransformer
-from typing import List
+from typing import List, Dict, Any
 import os
 import json
 from utils import read_json_files, save_processed_papers_to_file
@@ -10,7 +10,7 @@ dotenv.load_dotenv()
 DATA_PATH = os.getenv('DATA_PATH')
 
 # Load a pre-trained Sentence Transformer model
-model = SentenceTransformer('paraphrase-MiniLM-L6-v2') # TODO: Replace with Bedrock embeddings.
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')  # TODO: Replace with Bedrock embeddings.
 
 def chunk_text(text: str, max_length: int = 512, overlap: int = 50) -> List[str]:
     """
@@ -55,17 +55,21 @@ def generate_embeddings(text_chunks: List[str]) -> List[List[float]]:
     embeddings = model.encode(text_chunks, convert_to_tensor=False)
     return embeddings
 
-def process_papers(papers: List[dict], chunk_size: int = 512, overlap: int = 50):
+def process_papers(
+    papers: List[Dict[str, Any]], 
+    chunk_size: int = 512, 
+    overlap: int = 50
+) -> List[Dict[str, Any]]:
     """
     Process a list of papers: chunk their summaries and generate embeddings.
     
     Args:
-        papers (List[dict]): List of papers with title and summary.
+        papers (List[Dict[str, Any]]): List of papers with title and summary.
         chunk_size (int): Maximum number of tokens per chunk.
         overlap (int): Number of overlapping tokens between chunks.
         
     Returns:
-        List[dict]: A list of processed papers with embeddings.
+        List[Dict[str, Any]]: A list of processed papers with embeddings.
     """
     processed_papers = []
     
@@ -88,10 +92,12 @@ def process_papers(papers: List[dict], chunk_size: int = 512, overlap: int = 50)
     
     return processed_papers
 
-
-
-
-def run_pipeline(json_dir: str, output_file: str, chunk_size: int = 512, overlap: int = 50):
+def run_pipeline(
+    json_dir: str, 
+    output_file: str, 
+    chunk_size: int = 512, 
+    overlap: int = 50
+) -> List[Dict[str, Any]]:
     """
     Run the complete pipeline: read JSON files, process papers, and save results.
     
@@ -100,19 +106,29 @@ def run_pipeline(json_dir: str, output_file: str, chunk_size: int = 512, overlap
         output_file (str): Path to save the output JSON file.
         chunk_size (int): The maximum number of tokens per chunk.
         overlap (int): Number of overlapping tokens between chunks.
+        
+    Returns:
+        List[Dict[str, Any]]: A list of processed papers with embeddings.
     """
     # Step 1: Read JSON files
     papers = read_json_files(json_dir)
     
     # Step 2: Process papers (chunking and embedding)
-    processed_papers = process_papers(papers, chunk_size=chunk_size, overlap=overlap)
-    print(f"Succesfully processed {len(processed_papers)} papers.")
+    processed_papers = process_papers(
+        papers, 
+        chunk_size=chunk_size, 
+        overlap=overlap
+    )
+    print(f"Successfully processed {len(processed_papers)} papers.")
     return processed_papers
     # Step 3: Save the processed papers with embeddings
-    #save_processed_papers_to_file(processed_papers, output_file)
-    #print(processed_papers[0])
-    #print(f"Successfully processed and saved {len(processed_papers)} papers.")
+    # save_processed_papers_to_file(processed_papers, output_file)
+    # print(processed_papers[0])
+    # print(f"Successfully processed and saved {len(processed_papers)} papers.")
 
 if __name__ == "__main__":
     # Example usage: process papers in the "data/json_files" directory and save to "output/processed_papers.json"
-    run_pipeline(json_dir=DATA_PATH, output_file=f'''{DATA_PATH}/processed_papers.json''')
+    run_pipeline(
+        json_dir=DATA_PATH, 
+        output_file=f"{DATA_PATH}/processed_papers.json"
+    )
