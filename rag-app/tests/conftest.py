@@ -104,6 +104,7 @@ def setup_test_database():
     try:
         with conn.cursor() as cur:
             # Create the papers table with vector support
+            # Using 384 dimensions to match the paraphrase-MiniLM-L6-v2 model
             cur.execute("""
                 CREATE EXTENSION IF NOT EXISTS vector;
                 
@@ -112,15 +113,15 @@ def setup_test_database():
                     title TEXT NOT NULL,
                     summary TEXT NOT NULL,
                     chunk TEXT NOT NULL,
-                    embedding vector(1536)
+                    embedding vector(384)
                 );
             """)
             
-            # Create a 1536-dimensional vector for testing
+            # Create a 384-dimensional vector for testing
             # We'll use a simple pattern: [0.1, 0.2, 0.3, ..., 0.1, 0.2, 0.3]
-            # This creates a 1536-dimensional vector with repeating values
+            # This creates a 384-dimensional vector with repeating values
             vector_values = []
-            for i in range(1536):
+            for i in range(384):
                 vector_values.append(str(0.1 + (i % 3) * 0.1))
             vector_str = f"[{', '.join(vector_values)}]"
             

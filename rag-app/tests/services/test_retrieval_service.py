@@ -2,6 +2,7 @@ import pytest
 from server.src.services.retrieval_service import retrieve_top_k_chunks
 from dotenv import load_dotenv
 import os
+from unittest.mock import patch, MagicMock
 
 # TODO: update to use BaseSettings implementation
 load_dotenv()
@@ -23,19 +24,26 @@ def test_retrieve_top_k_chunks():
     query = "perovskite"
     top_k = 5
 
-    # Call the function
-    try:
-        documents = retrieve_top_k_chunks(query, top_k, db_config)
+    # Create a mock embedding model that returns a 384-dimensional vector
+    mock_embedding = [0.1] * 384  # Create a 384-dimensional vector with all 0.1 values
+    
+    # Mock the embedding model's encode method
+    with patch("server.src.services.retrieval_service.embedding_model") as mock_model:
+        mock_model.encode.return_value = MagicMock(tolist=lambda: mock_embedding)
+        
+        # Call the function
+        try:
+            documents = retrieve_top_k_chunks(query, top_k, db_config)
 
-        # Assertions
-        assert isinstance(documents, list)
-        assert len(documents) <= top_k
+            # Assertions
+            assert isinstance(documents, list)
+            assert len(documents) <= top_k
 
-        for doc in documents:
-            assert "id" in doc
-            assert "title" in doc
-            assert "summary" in doc
-            assert "chunk" in doc
-            assert "similarity_score" in doc
-    except Exception as e:
-        pytest.fail(f"Test failed with error: {str(e)}")
+            for doc in documents:
+                assert "id" in doc
+                assert "title" in doc
+                assert "summary" in doc
+                assert "chunk" in doc
+                assert "similarity_score" in doc
+        except Exception as e:
+            pytest.fail(f"Test failed with error: {str(e)}")
