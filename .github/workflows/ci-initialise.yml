@@ -83,6 +83,11 @@ jobs:
           cd rag-app/server
           poetry install
 
+      - name: Install linting tools
+        run: |
+          cd rag-app/server
+          poetry add --group dev flake8 black isort
+
       - name: Wait for PostgreSQL
         run: |
           until PGPASSWORD=postgres psql -h localhost -U postgres -d test_db -c '\q'; do
