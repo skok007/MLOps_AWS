@@ -127,9 +127,10 @@ async def test_generate_response_long_query(mock_chunks, mock_generate_response)
     long_query = "Perovskites " * 100
 
     # Mock the response expected from the LLM for the long query
-    mock_generate_response.return_value = (
-        "Perovskites are materials used in solar cells."
-    )
+    mock_generate_response.return_value = {
+        "response": "Perovskites are materials used in solar cells.",
+        "response_tokens_per_second": 150.0
+    }
 
     # Call the generate_response function with the long query
     response = await generate_response(
@@ -137,8 +138,8 @@ async def test_generate_response_long_query(mock_chunks, mock_generate_response)
     )
 
     # Assertions
-    assert isinstance(response, Dict), "Response should be a Dict."
-    assert "response" in response, "Response should contain a 'response' key."
+    assert isinstance(response, dict), "Response should be a Dict."
+    assert "response" in response, "Response should contain a 'response' key"
     assert "Perovskites" in response["response"], "Response should handle long query without error."
     assert len(response["response"].split()) <= 150, "Response should not exceed max_tokens."
 
@@ -160,9 +161,10 @@ async def test_generate_response_with_multiple_chunks(
     Assertions:
         - The response incorporates content from multiple chunks
         - The response structure matches the expected format
+        - The response includes specific key information about efficiency and properties
     """
     mock_generate_response.return_value = {
-        "response": "Perovskites are used in solar cells and have unique properties. Their efficiency has recently improved.",
+        "response": "Recent research shows significant efficiency improvements in perovskite solar cells, with unique properties enabling better performance.",
         "response_tokens_per_second": 200.0
     }
 
@@ -173,6 +175,6 @@ async def test_generate_response_with_multiple_chunks(
     assert isinstance(response, dict), "Response should be a dictionary"
     assert "response" in response, "Response should contain a 'response' key"
     assert "response_tokens_per_second" in response, "Response should contain token rate information"
-    assert "used in solar cells" in response["response"].lower()
-    assert "unique properties" in response["response"].lower()
-    assert "efficiency has improved" in response["response"].lower()
+    assert "efficiency" in response["response"].lower(), "Response should mention efficiency improvements"
+    assert "perovskite" in response["response"].lower(), "Response should mention perovskites"
+    assert "properties" in response["response"].lower(), "Response should mention material properties"

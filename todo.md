@@ -407,4 +407,13 @@
    - Fixed Opik configuration by removing the `environment` parameter that was causing errors
    - Updated the mocking implementation to mock `call_llm` instead of `generate_response`
    - Ensured proper error handling in the test fixtures
-   - Fixed the test assertions to match the expected response format 
+   - Fixed the test assertions to match the expected response format
+
+6. **Restructured CI Workflow**
+   - Broke down the single test job into multiple specialized jobs
+   - Created a logical job sequence with proper dependencies
+   - Added separate jobs for setup, database setup, testing, linting, and building
+   - Improved visibility in GitHub Actions by showing distinct job stages
+   - Enabled parallel execution of compatible jobs (linting and testing)
+   - Added proper artifact sharing between jobs
+   - Improved error isolation by separating concerns into different jobs 
