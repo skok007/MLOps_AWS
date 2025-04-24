@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     postgres_db: str = Field(..., json_schema_extra={"env": "POSTGRES_DB"})
     postgres_user: str = Field(..., json_schema_extra={"env": "POSTGRES_USER"})
     postgres_password: str = Field(
-        ..., json_schema_extra={"env": "POSTGRES_PASSWORD"}
+        ..., 
+        json_schema_extra={"env": "POSTGRES_PASSWORD"}
     )
 
     # ingestion config
@@ -38,6 +39,5 @@ class Settings(BaseSettings):
     rag_config: dict = {}
 
     model_config = ConfigDict(env_file=".env")  # Load variables from .env if they exist
-
 
 settings = Settings()

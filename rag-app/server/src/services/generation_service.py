@@ -1,12 +1,7 @@
-import boto3
-from botocore.exceptions import ClientError
 import os
 from typing import List, Dict, Union, Optional
 from server.src.models.document import RetrievedDocument
-from server.src.config import Settings, settings
-from fastapi import Depends
-import requests
-import json
+from server.src.config import settings
 import opik
 from openai import OpenAI
 from functools import lru_cache
@@ -26,7 +21,8 @@ def get_openai_client(api_key: Optional[str] = None) -> OpenAI:
     key = api_key or os.environ.get("OPENAI_API_KEY")
     if not key:
         raise ValueError(
-            "OpenAI API key must be provided either directly or via OPENAI_API_KEY environment variable"
+            "OpenAI API key must be provided either directly or via "
+            "OPENAI_API_KEY environment variable"
         )
     return OpenAI(api_key=key)
 

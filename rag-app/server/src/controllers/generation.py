@@ -11,6 +11,7 @@ from services.retrieval_service import retrieve_top_k_chunks
 import os
 import opik
 
+
 router = APIRouter()
 
 # Database configuration for document retrieval
@@ -22,7 +23,7 @@ db_config = {
     "port": os.environ.get("POSTGRES_PORT"),
 }
 
-# TODO: move all this model config to config files!
+
 @opik.track
 @router.get("/generate")
 async def generate_answer_endpoint(
@@ -51,23 +52,20 @@ async def generate_answer_endpoint(
             - 500: If there's an error generating the response
     """
     try:
-        # Retrieve documents
         chunks = retrieve_top_k_chunks(query, top_k, db_config=db_config)
         if not chunks:
             raise HTTPException(status_code=404, detail="No documents found.")
 
-        # Pass the RetrievedDocument objects directly
         generated_response = await generate_response(
             query, chunks, max_tokens, temperature
         )
         
-        # Check if generated_response is None
         if generated_response is None:
             raise HTTPException(
-                status_code=500, 
+                status_code=500,
                 detail="Failed to generate response from the language model."
             )
-            
+        
         print(f"Generated response {generated_response}")
         return generated_response
 

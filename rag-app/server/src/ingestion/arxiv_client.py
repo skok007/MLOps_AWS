@@ -51,19 +51,6 @@ def fetch_papers(query: str, max_results: int = 10) -> list:
 
     response = requests.get(ARXIV_API_URL, params=params)
     return parse_arxiv_response(response)
-    # response.raise_for_status()  # Raise an error for bad responses
-
-    # # Parse the XML response
-    # root = ET.fromstring(response.content)
-    # papers = []
-
-    # # Iterate over each entry in the XML feed
-    # for entry in root.findall('{http://www.w3.org/2005/Atom}entry'):
-    #     title = entry.find('{http://www.w3.org/2005/Atom}title').text
-    #     summary = entry.find('{http://www.w3.org/2005/Atom}summary').text
-    #     papers.append({"title": title.strip(), "summary": summary.strip()})
-
-    # return papers
 
 
 def fetch_papers_paginated(
@@ -73,6 +60,19 @@ def fetch_papers_paginated(
     wait_time: int = 5,
     save_local=True,
 ):
+    """
+    Fetch papers from arXiv API with pagination.
+
+    Args:
+        query (str): The search query.
+        max_results (int): Maximum number of results to fetch.
+        results_per_page (int): Number of results per page.
+        wait_time (int): Time to wait between requests.
+        save_local (bool): Whether to save results locally.
+
+    Returns:
+        list: A list of dictionaries with paper titles and summaries.
+    """
     start = 0
     papers = []
     for i in range(start, max_results, results_per_page):
@@ -91,47 +91,52 @@ def fetch_papers_paginated(
 
 
 if __name__ == "__main__":
-    # papers = fetch_papers(query="ti:perovskite", max_results=10)
+    # Example queries for different search scenarios
     papers = fetch_papers_paginated(
-        query="ti:perovskite", max_results=20, results_per_page=5, wait_time=5
+        query="ti:perovskite", 
+        max_results=20, 
+        results_per_page=5, 
+        wait_time=5
     )
-    # ========================
+    
     # Query Variant 1: Basic title-only search
-    # ========================
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite", max_results=20, results_per_page=5, wait_time=5
+    #     query="ti:perovskite", 
+    #     max_results=20, 
+    #     results_per_page=5, 
+    #     wait_time=5
     # )
 
-    # ========================
     # Query Variant 2: Title or abstract contains "perovskite"
-    # ========================
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite OR abs:perovskite", max_results=20, results_per_page=5, wait_time=5
+    #     query="ti:perovskite OR abs:perovskite", 
+    #     max_results=20, 
+    #     results_per_page=5, 
+    #     wait_time=5
     # )
 
-    # ========================
-    # Query Variant 3: Filter to category - materials science in condensed matter
-    # ========================
+    # Query Variant 3: Filter to category - materials science
     # papers = fetch_papers_paginated(
-    #     query="(ti:perovskite OR abs:perovskite) AND cat:cond-mat.mtrl-sci", max_results=20, results_per_page=5, wait_time=5
+    #     query="(ti:perovskite OR abs:perovskite) AND cat:cond-mat.mtrl-sci", 
+    #     max_results=20, 
+    #     results_per_page=5, 
+    #     wait_time=5
     # )
 
-    # ========================
     # Query Variant 4: Keyword combo (solar + perovskite in title)
-    # ========================
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite AND ti:solar", max_results=20, results_per_page=5, wait_time=5
+    #     query="ti:perovskite AND ti:solar", 
+    #     max_results=20, 
+    #     results_per_page=5, 
+    #     wait_time=5
     # )
 
-    # ========================
     # Query Variant 5: Specific author (Michael Grätzel as example)
-    # ========================
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite AND au:Grätzel", max_results=20, results_per_page=5, wait_time=5
+    #     query="ti:perovskite AND au:Grätzel", 
+    #     max_results=20, 
+    #     results_per_page=5, 
+    #     wait_time=5
     # )
-
     
     print(papers)
-    # This duplicates the save_local option in the function ... TODO: tidy this up and test thoroughly.
-    # with open("papers.json", "w") as f:
-    #     json.dump(papers, f)
