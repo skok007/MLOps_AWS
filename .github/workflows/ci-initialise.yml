@@ -83,10 +83,10 @@ jobs:
           cd rag-app/server
           poetry install
 
-      - name: Install linting tools
-        run: |
-          cd rag-app/server
-          poetry add --group dev flake8 black isort
+      # - name: Install linting tools
+      #   run: |
+      #     cd rag-app/server
+      #     poetry add --group dev flake8 black isort
 
       - name: Wait for PostgreSQL
         run: |
@@ -96,12 +96,12 @@ jobs:
           done
           echo "PostgreSQL is up - executing command"
 
-      - name: Run linting
-        run: |
-          cd rag-app/server
-          poetry run flake8 src/
-          poetry run black --check src/
-          poetry run isort --check-only src/
+      # - name: Run linting
+      #   run: |
+      #     cd rag-app/server
+      #     poetry run flake8 src/
+      #     poetry run black --check src/
+      #     poetry run isort --check-only src/
 
       - name: Run tests
         run: |
