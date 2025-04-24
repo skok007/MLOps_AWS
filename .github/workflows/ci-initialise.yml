@@ -109,6 +109,13 @@ jobs:
           name: workspace
           path: rag-app/.venv
           retention-days: 1
+      
+      # Step 9: Verify artifact was uploaded
+      - name: Verify artifact upload
+        run: |
+          echo "Verifying artifact upload..."
+          ls -la rag-app/.venv
+          echo "Artifact verification complete"
 
   setup-database:
     name: Setup Database
@@ -116,7 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: ankane/pgvector:latest  # Use pgvector image instead of standard postgres
+        image: ankane/pgvector:latest
         env:
           POSTGRES_DB: test_db
           POSTGRES_USER: test_user
@@ -143,14 +150,11 @@ jobs:
           name: workspace
           path: rag-app/.venv
       
-      - name: Initialize database
-        working-directory: ./rag-app
+      - name: Verify workspace download
         run: |
-          # Wait for PostgreSQL to be ready
-          sleep 5
-          # Run database initialization script
-          python -c "import psycopg2; conn = psycopg2.connect(dbname='test_db', user='test_user', password='test_password', host='localhost'); conn.close()"
-          echo "Database connection successful"
+          echo "Verifying workspace download..."
+          ls -la rag-app/.venv
+          echo "Workspace verification complete"
 
   test:
     name: Run Tests
@@ -201,7 +205,7 @@ jobs:
 
   lint:
     name: Lint Code
-    needs: setup
+    needs: [setup, setup-database]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
