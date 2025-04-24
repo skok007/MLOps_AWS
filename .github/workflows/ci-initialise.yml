@@ -92,10 +92,19 @@ jobs:
           poetry install --no-interaction
           echo "Installation complete!"
       
+      # Step 7: Verify workspace exists
+      - name: Verify workspace
+        working-directory: ./rag-app
+        run: |
+          if [ ! -d ".venv" ]; then
+            echo "Error: .venv directory not found"
+            exit 1
+          fi
+          echo "Workspace verified successfully"
+      
       # Step 8: Upload workspace for other jobs
       - name: Upload workspace
         uses: actions/upload-artifact@v4
-        if-no-files-found: error  # Fail if no files are found to upload
         with:
           name: workspace
           path: rag-app/.venv
