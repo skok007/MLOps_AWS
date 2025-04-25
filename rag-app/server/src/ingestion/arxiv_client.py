@@ -4,7 +4,6 @@ import json
 import time
 import dotenv
 import os
-from typing import List, Dict, Any
 
 dotenv.load_dotenv()
 
@@ -12,7 +11,7 @@ ARXIV_API_URL = os.getenv("ARXIV_API_URL")  # "http://export.arxiv.org/api/query
 DATA_PATH = os.getenv("DATA_PATH")  # './data'
 
 
-def parse_arxiv_response(response: requests.Response) -> List[Dict[str, str]]:
+def parse_arxiv_response(response: requests.Response) -> list:
     """
     Parse the arXiv response and extract the paper titles and summaries.
 
@@ -20,7 +19,7 @@ def parse_arxiv_response(response: requests.Response) -> List[Dict[str, str]]:
         response (requests.Response): The response object from the arXiv API.
 
     Returns:
-        List[Dict[str, str]]: A list of dictionaries with paper titles and summaries.
+        list: A list of dictionaries with paper titles and summaries.
     """
     response.raise_for_status()  # Raise an error for bad responses
 
@@ -37,7 +36,7 @@ def parse_arxiv_response(response: requests.Response) -> List[Dict[str, str]]:
     return papers
 
 
-def fetch_papers(query: str, max_results: int = 10) -> List[Dict[str, str]]:
+def fetch_papers(query: str, max_results: int = 10) -> list:
     """
     Fetch papers from the arXiv API based on a query.
 
@@ -46,7 +45,7 @@ def fetch_papers(query: str, max_results: int = 10) -> List[Dict[str, str]]:
         max_results (int): The maximum number of results to fetch.
 
     Returns:
-        List[Dict[str, str]]: A list of dictionaries with paper titles and summaries.
+        list: A list of dictionaries with paper titles and summaries.
     """
     params = {"search_query": query, "start": 0, "max_results": max_results}
 
@@ -59,8 +58,8 @@ def fetch_papers_paginated(
     max_results: int = 20,
     results_per_page: int = 5,
     wait_time: int = 5,
-    save_local: bool = True,
-) -> List[Dict[str, str]]:
+    save_local=True,
+):
     """
     Fetch papers from arXiv API with pagination.
 
@@ -72,7 +71,7 @@ def fetch_papers_paginated(
         save_local (bool): Whether to save results locally.
 
     Returns:
-        List[Dict[str, str]]: A list of dictionaries with paper titles and summaries.
+        list: A list of dictionaries with paper titles and summaries.
     """
     start = 0
     papers = []
@@ -82,8 +81,9 @@ def fetch_papers_paginated(
         response = requests.get(ARXIV_API_URL, params=params)
         subset_papers = parse_arxiv_response(response)
         if save_local:
-            output_file = f"{DATA_PATH}/papers_{i}_{i+results_per_page}.json"
-            with open(output_file, "w") as f:
+            with open(
+                f"""{DATA_PATH}/papers_{i}_{i+results_per_page}.json""", "w"
+            ) as f:
                 json.dump(subset_papers, f)
         papers += subset_papers
         time.sleep(wait_time)
@@ -93,49 +93,49 @@ def fetch_papers_paginated(
 if __name__ == "__main__":
     # Example queries for different search scenarios
     papers = fetch_papers_paginated(
-        query="ti:perovskite",
-        max_results=20,
-        results_per_page=5,
+        query="ti:perovskite", 
+        max_results=20, 
+        results_per_page=5, 
         wait_time=5
     )
     
     # Query Variant 1: Basic title-only search
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite",
-    #     max_results=20,
-    #     results_per_page=5,
+    #     query="ti:perovskite", 
+    #     max_results=20, 
+    #     results_per_page=5, 
     #     wait_time=5
     # )
 
     # Query Variant 2: Title or abstract contains "perovskite"
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite OR abs:perovskite",
-    #     max_results=20,
-    #     results_per_page=5,
+    #     query="ti:perovskite OR abs:perovskite", 
+    #     max_results=20, 
+    #     results_per_page=5, 
     #     wait_time=5
     # )
 
     # Query Variant 3: Filter to category - materials science
     # papers = fetch_papers_paginated(
-    #     query="(ti:perovskite OR abs:perovskite) AND cat:cond-mat.mtrl-sci",
-    #     max_results=20,
-    #     results_per_page=5,
+    #     query="(ti:perovskite OR abs:perovskite) AND cat:cond-mat.mtrl-sci", 
+    #     max_results=20, 
+    #     results_per_page=5, 
     #     wait_time=5
     # )
 
     # Query Variant 4: Keyword combo (solar + perovskite in title)
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite AND ti:solar",
-    #     max_results=20,
-    #     results_per_page=5,
+    #     query="ti:perovskite AND ti:solar", 
+    #     max_results=20, 
+    #     results_per_page=5, 
     #     wait_time=5
     # )
 
     # Query Variant 5: Specific author (Michael Grätzel as example)
     # papers = fetch_papers_paginated(
-    #     query="ti:perovskite AND au:Grätzel",
-    #     max_results=20,
-    #     results_per_page=5,
+    #     query="ti:perovskite AND au:Grätzel", 
+    #     max_results=20, 
+    #     results_per_page=5, 
     #     wait_time=5
     # )
     
