@@ -1,5 +1,5 @@
 import pytest
-from server.src.services.retrieval_service import retrieve_top_k_chunks, get_db_connection, retrieve_relevant_chunks
+from server.src.services.retrieval_service import retrieve_top_k_chunks, get_db_connection
 from dotenv import load_dotenv
 import os
 from unittest.mock import patch, MagicMock
