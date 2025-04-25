@@ -1,5 +1,5 @@
 import pytest
-from server.src.services.retrieval_service import retrieve_top_k_chunks, get_db_connection, retrieve_relevant_chunks
+from server.src.services.retrieval_service import retrieve_top_k_chunks, get_db_connection
 from dotenv import load_dotenv
 import os
 from unittest.mock import patch, MagicMock
@@ -80,7 +80,7 @@ def test_retrieve_top_k_chunks():
         except Exception as e:
             pytest.fail(f"Test failed with error: {str(e)}")
 
-def test_retrieve_relevant_chunks():
+def test_retrieve_top_k_chunks_alternative():
     # Mock parameters
     query = "Test query"
     k = 3
@@ -96,7 +96,7 @@ def test_retrieve_relevant_chunks():
     with patch("server.src.services.retrieval_service.embedding_model") as mock_embedding_model:
         # Set up mock embedding model to return a test embedding
         mock_embedding = [0.1] * 384  # 384-dimensional vector for testing
-        mock_embedding_model.encode.return_value = mock_embedding
+        mock_embedding_model.encode.return_value = MagicMock(tolist=lambda: mock_embedding)
         
         # Mock the database connection and cursor
         mock_conn = MagicMock()

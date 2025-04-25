@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # Comet config for Opik
     opik_api_key: str = Field(..., json_schema_extra={"env": "OPIK_API_KEY"})
     opik_workspace: str = Field(..., json_schema_extra={"env": "OPIK_WORKSPACE"})
+    opik_project_name: str = Field(..., json_schema_extra={"env": "OPIK_PROJECT_NAME"})
 
     # OpenAI config
     openai_model: str = Field(..., json_schema_extra={"env": "OPENAI_MODEL"})
