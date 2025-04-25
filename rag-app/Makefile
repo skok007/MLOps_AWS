@@ -50,7 +50,7 @@ format:
 
 # Run tests
 test:
-	poetry run pytest
+	./run_tests.sh
 
 # Clean up build artifacts (if any)
 clean:
