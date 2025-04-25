@@ -6,7 +6,8 @@
 
 import pytest
 from typing import Dict, Union
-from server.src.services.generation_service import generate_response
+from server.src.services.generation_service import generate_response, call_llm
+from unittest.mock import patch, MagicMock
 
 # Leverages the mock's from conftest.py
 @pytest.mark.asyncio
@@ -35,7 +36,17 @@ async def test_generate_response_basic(
         "response_tokens_per_second": 100.0
     }
 
-    response = await generate_response(mock_query, mock_chunks, **mock_config)
+    # Extract max_tokens and temperature from mock_config
+    max_tokens = mock_config.get("max_tokens", 200)
+    temperature = mock_config.get("temperature", 0.7)
+    
+    # Call generate_response with explicit parameters to match the function signature
+    response = await generate_response(
+        query=mock_query, 
+        chunks=mock_chunks, 
+        max_tokens=max_tokens, 
+        temperature=temperature
+    )
 
     assert isinstance(response, dict), "Response should be a dictionary"
     assert "response" in response, "Response should contain a 'response' key"
@@ -67,7 +78,17 @@ async def test_generate_response_empty_chunks(
         "response_tokens_per_second": None
     }
 
-    response = await generate_response(mock_query, [], **mock_config)
+    # Extract max_tokens and temperature from mock_config
+    max_tokens = mock_config.get("max_tokens", 200)
+    temperature = mock_config.get("temperature", 0.7)
+    
+    # Call generate_response with explicit parameters to match the function signature
+    response = await generate_response(
+        query=mock_query, 
+        chunks=[], 
+        max_tokens=max_tokens, 
+        temperature=temperature
+    )
 
     assert isinstance(response, dict), "Response should be a dictionary"
     assert "response" in response, "Response should contain a 'response' key"
@@ -98,8 +119,12 @@ async def test_generate_response_high_temperature(
         "response_tokens_per_second": 150.0
     }
 
+    # Call generate_response with explicit parameters to match the function signature
     response = await generate_response(
-        mock_query, mock_chunks, max_tokens=150, temperature=1.5
+        query=mock_query, 
+        chunks=mock_chunks, 
+        max_tokens=150, 
+        temperature=1.5
     )
 
     assert isinstance(response, dict), "Response should be a dictionary"
@@ -132,9 +157,12 @@ async def test_generate_response_long_query(mock_chunks, mock_generate_response)
         "response_tokens_per_second": 150.0
     }
 
-    # Call the generate_response function with the long query
+    # Call generate_response with explicit parameters to match the function signature
     response = await generate_response(
-        long_query, mock_chunks, max_tokens=150, temperature=0.7
+        query=long_query, 
+        chunks=mock_chunks, 
+        max_tokens=150, 
+        temperature=0.7
     )
 
     # Assertions
@@ -168,8 +196,12 @@ async def test_generate_response_with_multiple_chunks(
         "response_tokens_per_second": 200.0
     }
 
+    # Call generate_response with explicit parameters to match the function signature
     response = await generate_response(
-        mock_query, mock_chunks, max_tokens=150, temperature=0.7
+        query=mock_query, 
+        chunks=mock_chunks, 
+        max_tokens=150, 
+        temperature=0.7
     )
 
     assert isinstance(response, dict), "Response should be a dictionary"
@@ -178,3 +210,31 @@ async def test_generate_response_with_multiple_chunks(
     assert "efficiency" in response["response"].lower(), "Response should mention efficiency improvements"
     assert "perovskite" in response["response"].lower(), "Response should mention perovskites"
     assert "properties" in response["response"].lower(), "Response should mention material properties"
+
+def test_call_llm():
+    # Mock parameters
+    prompt = "Test prompt"
+    max_tokens = 100
+    temperature = 0.7
+    
+    # Mock the LLM client
+    with patch("server.src.services.generation_service.client") as mock_client:
+        # Set up the mock client to return a test response
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "Test response"
+        mock_client.chat.completions.create.return_value = mock_response
+        
+        # Call the function
+        response = call_llm(prompt, max_tokens, temperature)
+        
+        # Verify the client was called correctly
+        mock_client.chat.completions.create.assert_called_once_with(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        
+        # Verify the response
+        assert response == "Test response"
