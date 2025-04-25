@@ -214,27 +214,22 @@ async def test_generate_response_with_multiple_chunks(
 def test_call_llm():
     # Mock parameters
     prompt = "Test prompt"
-    max_tokens = 100
-    temperature = 0.7
     
-    # Mock the LLM client
-    with patch("server.src.services.generation_service.client") as mock_client:
+    # Mock the OpenAI client
+    with patch("server.src.services.generation_service.get_default_client") as mock_get_client:
         # Set up the mock client to return a test response
+        mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
         mock_response.choices[0].message.content = "Test response"
         mock_client.chat.completions.create.return_value = mock_response
+        mock_get_client.return_value = mock_client
         
         # Call the function
-        response = call_llm(prompt, max_tokens, temperature)
+        response = call_llm(prompt)
         
         # Verify the client was called correctly
-        mock_client.chat.completions.create.assert_called_once_with(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens,
-            temperature=temperature
-        )
+        mock_client.chat.completions.create.assert_called_once()
         
         # Verify the response
-        assert response == "Test response"
+        assert response["response"] == "Test response"

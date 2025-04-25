@@ -1,5 +1,5 @@
 import pytest
-from server.src.services.retrieval_service import retrieve_top_k_chunks, get_db_connection
+from server.src.services.retrieval_service import retrieve_top_k_chunks, get_db_connection, retrieve_relevant_chunks
 from dotenv import load_dotenv
 import os
 from unittest.mock import patch, MagicMock
@@ -84,24 +84,60 @@ def test_retrieve_relevant_chunks():
     # Mock parameters
     query = "Test query"
     k = 3
+    db_config = {
+        "dbname": "test_db",
+        "user": "test_user",
+        "password": "test_password",
+        "host": "localhost",
+        "port": "5432"
+    }
     
-    # Mock the vector store
-    with patch("server.src.services.retrieval_service.vector_store") as mock_vector_store:
-        # Set up the mock vector store to return test chunks
-        mock_chunks = [
-            {"text": "Chunk 1", "metadata": {"source": "doc1"}},
-            {"text": "Chunk 2", "metadata": {"source": "doc1"}},
-            {"text": "Chunk 3", "metadata": {"source": "doc2"}}
+    # Mock the embedding model
+    with patch("server.src.services.retrieval_service.embedding_model") as mock_embedding_model:
+        # Set up mock embedding model to return a test embedding
+        mock_embedding = [0.1] * 384  # 384-dimensional vector for testing
+        mock_embedding_model.encode.return_value = mock_embedding
+        
+        # Mock the database connection and cursor
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        
+        # Set up mock cursor to return test results
+        mock_results = [
+            (1, "Title 1", "Summary 1", "Chunk 1", 0.8),
+            (2, "Title 2", "Summary 2", "Chunk 2", 0.7),
+            (3, "Title 3", "Summary 3", "Chunk 3", 0.6)
         ]
-        mock_vector_store.similarity_search.return_value = mock_chunks
+        mock_cursor.fetchall.return_value = mock_results
         
-        # Call the function
-        chunks = retrieve_relevant_chunks(query, k)
-        
-        # Verify the vector store was called correctly
-        mock_vector_store.similarity_search.assert_called_once_with(query, k=k)
-        
-        # Verify the chunks
-        assert len(chunks) == 3
-        assert all(isinstance(chunk, dict) for chunk in chunks)
-        assert all("text" in chunk and "metadata" in chunk for chunk in chunks)
+        # Mock the database connection function
+        with patch("server.src.services.retrieval_service.get_db_connection") as mock_get_db:
+            mock_get_db.return_value = mock_conn
+            
+            # Call the function
+            results = retrieve_top_k_chunks(query, k, db_config)
+            
+            # Verify the embedding model was called correctly
+            mock_embedding_model.encode.assert_called_once_with(query, convert_to_tensor=False)
+            
+            # Verify database connection was established
+            mock_get_db.assert_called_once_with(db_config)
+            
+            # Verify cursor operations
+            mock_conn.cursor.assert_called_once()
+            mock_cursor.execute.assert_called_once()
+            mock_cursor.fetchall.assert_called_once()
+            
+            # Verify results
+            assert len(results) == 3
+            assert all(isinstance(result, dict) for result in results)
+            assert all(
+                key in result 
+                for result in results 
+                for key in ["id", "title", "summary", "chunk", "similarity_score"]
+            )
+            
+            # Verify cleanup
+            mock_cursor.close.assert_called_once()
+            mock_conn.close.assert_called_once()

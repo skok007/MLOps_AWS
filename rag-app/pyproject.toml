@@ -38,11 +38,6 @@ pythonpath = [
 ]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
-# Exclude the non-existent test files
-norecursedirs = ["tests/services/test_embedding_service.py", "tests/services/test_llm_service.py", "tests/services/test_rag_service.py"]
-testpaths = ["tests"]
-# Explicitly specify which test files to run
-python_files = ["test_*.py", "!test_embedding_service.py", "!test_llm_service.py", "!test_rag_service.py"]
 
 [build-system]
 requires = ["poetry-core"]
