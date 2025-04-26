@@ -3,6 +3,10 @@
 # Exit on any error
 set -e
 
+# CONFIGURABLE VARIABLES
+# Path to the .env file (adjust this if needed)
+ENV_FILE_PATH="rag-app/.env" # <-- CHANGE this path if needed
+
 # Check if gh CLI is installed
 if ! command -v gh &> /dev/null; then
     echo "Error: GitHub CLI (gh) is not installed"
@@ -14,6 +18,12 @@ fi
 if ! gh auth status &> /dev/null; then
     echo "Error: Not authenticated with GitHub"
     echo "Please run 'gh auth login' first"
+    exit 1
+fi
+
+# Check if .env file exists
+if [ ! -f "$ENV_FILE_PATH" ]; then
+    echo "Error: .env file not found at $ENV_FILE_PATH"
     exit 1
 fi
 
@@ -31,16 +41,22 @@ fi
 
 echo "Setting GitHub secrets for repository: $REPO"
 
-# Function to securely set a secret
-set_secret() {
+# Clean up the .env file for sourcing (remove spaces around '=')
+CLEANED_ENV=$(mktemp)
+sed 's/ *= */=/' "$ENV_FILE_PATH" > "$CLEANED_ENV"
+
+# Load secrets from cleaned .env
+echo "Loading secrets from $ENV_FILE_PATH (cleaned)..."
+set -a
+source "$CLEANED_ENV"
+set +a
+rm "$CLEANED_ENV"
+
+# Function to set a secret if it exists
+set_secret_from_env() {
     local secret_name=$1
-    local prompt_text=$2
-    
-    # Use -s flag for secure input
-    echo -n "$prompt_text: "
-    read -s secret_value
-    echo
-    
+    local secret_value=${!secret_name}
+
     if [ ! -z "$secret_value" ]; then
         echo "Setting ${secret_name}..."
         printf "%s" "$secret_value" | gh secret set "$secret_name" -R "$REPO" -b -
@@ -51,23 +67,31 @@ set_secret() {
         echo "Successfully set ${secret_name}"
         return 0
     else
-        echo "Warning: Empty value provided for ${secret_name}, skipping"
+        echo "Warning: No value found for ${secret_name}, skipping"
         return 1
     fi
 }
 
-# Set all required secrets
+# List of secrets to set (add more here if needed)
+SECRETS_LIST=(
+    "POSTGRES_USER"
+    "POSTGRES_PASSWORD"
+    "OPIK_API_KEY"
+    "OPIK_WORKSPACE"
+    "OPIK_PROJECT_NAME"
+    "OPENAI_API_KEY"
+    "ARXIV_API_URL"
+)
+
+# Set all secrets
 SECRETS_SET=0
-set_secret "POSTGRES_USER" "Enter PostgreSQL username" && SECRETS_SET=$((SECRETS_SET + 1))
-set_secret "POSTGRES_PASSWORD" "Enter PostgreSQL password" && SECRETS_SET=$((SECRETS_SET + 1))
-set_secret "OPIK_API_KEY" "Enter Opik API key" && SECRETS_SET=$((SECRETS_SET + 1))
-set_secret "OPIK_WORKSPACE" "Enter Opik workspace" && SECRETS_SET=$((SECRETS_SET + 1))
-set_secret "OPIK_PROJECT_NAME" "Enter Opik project name" && SECRETS_SET=$((SECRETS_SET + 1))
-set_secret "OPENAI_API_KEY" "Enter OpenAI API key" && SECRETS_SET=$((SECRETS_SET + 1))
+for secret_name in "${SECRETS_LIST[@]}"; do
+    set_secret_from_env "$secret_name" && SECRETS_SET=$((SECRETS_SET + 1))
+done
 
 if [ $SECRETS_SET -eq 0 ]; then
     echo "Error: No secrets were set."
     exit 1
 else
     echo "Successfully set $SECRETS_SET secrets!"
-fi 
+fi

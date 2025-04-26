@@ -5,8 +5,12 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - '*'  # Run on push to any branch
-  workflow_dispatch:  # Manual trigger only
+      - 'main'  # Run on push to main branch only
+      - 'develop'  # Run on push to develop branch
+  pull_request:
+    branches:
+      - 'main'  # Run on pull requests to main branch
+  workflow_dispatch:  # Manual trigger
 
 # Define environment variables needed for the application
 env:
@@ -15,31 +19,12 @@ env:
   APP_NAME: rag-app
   DEBUG: "true"
   
-  # Database connection settings
+  # Database connection settings (for testing only)
   POSTGRES_HOST: localhost
   POSTGRES_DB: test_db
   POSTGRES_USER: test_user
   POSTGRES_PASSWORD: test_password
   POSTGRES_PORT: 5432
-  
-  # API endpoints and paths
-  ARXIV_API_URL: https://export.arxiv.org/api/query
-  DATA_PATH: ./data
-  
-  # Model generation parameters
-  TEMPERATURE: "0.7"
-  TOP_P: "0.9"
-  MAX_TOKENS: "1000"
-  
-  # Opik API settings (for AI model evaluation)
-  OPIK_API_KEY: ${{ secrets.OPIK_API_KEY }}
-  OPIK_WORKSPACE: ${{ secrets.OPIK_WORKSPACE }}
-  OPIK_ENVIRONMENT: test
-  OPIK_PROJECT_NAME: rag-app-test
-  
-  # OpenAI settings
-  OPENAI_MODEL: gpt-3.5-turbo
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   
   # Poetry version to use
   POETRY_VERSION: "1.8.2"
@@ -74,93 +59,57 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
           
-      # Step 3: Cache Poetry installation
-      - name: Cache Poetry installation
+      # Step 3: Cache Poetry installation and dependencies
+      - name: Cache Poetry and dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.local
-          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}
-          
-      # Step 4: Cache Poetry dependencies
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-deps-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          path: |
+            ~/.local
+            ~/.cache/pypoetry
+            ./rag-app/.venv
+          key: poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
-            poetry-deps-${{ runner.os }}-
+            poetry-${{ runner.os }}-${{ env.POETRY_VERSION }}-
           
-      # Step 5: Install Poetry package manager
+      # Step 4: Install Poetry package manager
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version ${{ env.POETRY_VERSION }}
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
           
-      # Step 6: Install project dependencies
+      # Step 5: Install project dependencies
       - name: Install dependencies
         working-directory: ./rag-app
         run: |
           echo "Installing dependencies..."
           poetry install --no-interaction
           echo "Installation complete!"
+      
+      # Step 6: Initialize database and run tests
+      - name: Initialize database and run tests
+        working-directory: ./rag-app
+        run: |
+          # Wait for PostgreSQL to be ready
+          echo "Waiting for PostgreSQL to be ready..."
+          until poetry run python -c "import psycopg2; conn = psycopg2.connect(dbname='test_db', user='test_user', password='test_password', host='localhost'); conn.close()" 2>/dev/null; do
+            echo "PostgreSQL is unavailable - sleeping"
+            sleep 1
+          done
+          echo "PostgreSQL is up - executing tests"
           
-      # Step 7: Verify Poetry environment
-      - name: Verify Poetry environment
-        working-directory: ./rag-app
-        run: |
-          echo "Verifying Poetry environment..."
-          if [ -d ".venv" ]; then
-            echo ".venv directory found"
-            ls -la .venv
-          else
-            echo ".venv directory not found, checking for other virtual environment directories"
-            if [ -d "venv" ]; then
-              echo "venv directory found"
-              ls -la venv
-            elif [ -d ".virtualenv" ]; then
-              echo ".virtualenv directory found"
-              ls -la .virtualenv
-            else
-              echo "No virtual environment directory found, creating one"
-              mkdir -p .venv
-              touch .venv/dummy.txt
-              echo "Created dummy .venv directory"
-            fi
-          fi
-      
-      # Step 8: Wait for PostgreSQL to be ready
-      - name: Wait for PostgreSQL
-        run: sleep 5
-      
-      # Step 9: Install psycopg2 for database connection
-      - name: Install psycopg2
-        working-directory: ./rag-app
-        run: |
-          echo "Installing psycopg2..."
-          poetry add psycopg2-binary
-          echo "psycopg2 installation complete"
-      
-      # Step 10: Initialize database
-      - name: Initialize database
-        working-directory: ./rag-app
-        run: |
-          poetry run python -c "import psycopg2; conn = psycopg2.connect(dbname='test_db', user='test_user', password='test_password', host='localhost'); conn.close()"
-          echo "Database connection successful"
-      
-      # Step 11: Run the test suite
-      - name: Run tests
-        working-directory: ./rag-app
-        run: |
-          poetry run pytest tests/ -v --junitxml=test-results.xml
+          # Run tests with coverage
+          poetry run pytest tests/ -v --junitxml=test-results.xml --cov=server --cov-report=xml
           
-      # Step 12: Upload test results as artifacts
-      - name: Upload test results
+      # Step 7: Upload test results and coverage as artifacts
+      - name: Upload test results and coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results
-          path: rag-app/test-results.xml
+          path: |
+            rag-app/test-results.xml
+            rag-app/coverage.xml
       
       # Step 13: Install linting tools - TEMPORARILY DISABLED
       # - name: Install linting tools
