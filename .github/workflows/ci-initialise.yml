@@ -26,6 +26,25 @@ env:
   POSTGRES_PASSWORD: test_password
   POSTGRES_PORT: 5432
   
+  # API endpoints and paths
+  ARXIV_API_URL: https://export.arxiv.org/api/query
+  DATA_PATH: ./data
+  
+  # Model generation parameters
+  TEMPERATURE: "0.7"
+  TOP_P: "0.9"
+  MAX_TOKENS: "1000"
+  
+  # Opik API settings (for AI model evaluation)
+  OPIK_API_KEY: ${{ secrets.OPIK_API_KEY }}
+  OPIK_WORKSPACE: ${{ secrets.OPIK_WORKSPACE }}
+  OPIK_ENVIRONMENT: test
+  OPIK_PROJECT_NAME: rag-app-test
+  
+  # OpenAI settings
+  OPENAI_MODEL: gpt-3.5-turbo
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  
   # Poetry version to use
   POETRY_VERSION: "1.8.2"
 
